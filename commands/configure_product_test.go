@@ -394,7 +394,7 @@ var _ = Describe("ConfigureProduct", func() {
 				})
 			})
 
-			Context("when the config file contains product-name and is passed as a flag", func() {
+			Context("when the config file contains product-name and product-name is passed as a flag", func() {
 				It("overrides the config value with the flag value", func() {
 					client := commands.NewConfigureProduct(func() []string { return nil }, service, logger)
 

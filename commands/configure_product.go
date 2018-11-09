@@ -39,6 +39,7 @@ type configureProductService interface {
 	UpdateStagedProductNetworksAndAZs(api.UpdateStagedProductNetworksAndAZsInput) error
 	UpdateStagedProductJobResourceConfig(productGUID, jobGUID string, jobProperties api.JobProperties) error
 	UpdateStagedProductErrands(productID, errandName string, postDeployState, preDeleteState interface{}) error
+	UpdateStagedProductMaxInFlight(productID string, maxInFlight api.MaxInFlightProperties) error
 }
 
 func NewConfigureProduct(environFunc func() []string, service configureProductService, logger logger) ConfigureProduct {
@@ -93,6 +94,7 @@ func (cp ConfigureProduct) Execute(args []string) error {
 		networkProperties string
 		productProperties string
 		productResources  string
+		maxInflight       map[string]interface{}
 		errandConfigs     map[string]config.ErrandConfig
 	)
 
@@ -138,6 +140,10 @@ func (cp ConfigureProduct) Execute(args []string) error {
 		if cfg.ErrandConfigs != nil {
 			errandConfigs = cfg.ErrandConfigs
 		}
+
+		if cfg.MaxInFlight != nil {
+			maxInflight = cfg.MaxInFlight
+		}
 	} else {
 		if cp.Options.NetworkProperties != "" {
 			networkProperties = cp.Options.NetworkProperties
@@ -175,6 +181,13 @@ func (cp ConfigureProduct) Execute(args []string) error {
 
 	if len(errandConfigs) > 0 {
 		err = cp.configureErrands(errandConfigs, productGUID)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(maxInflight) > 0 {
+		err = cp.configureMaxInFlight(maxInflight, productGUID)
 		if err != nil {
 			return err
 		}
@@ -291,6 +304,34 @@ func (cp ConfigureProduct) configureErrands(errandConfigs map[string]config.Erra
 			return fmt.Errorf("failed to set errand state for errand %s: %s", name, err)
 		}
 	}
+	return nil
+}
+
+func (cp ConfigureProduct) configureMaxInFlight(maxInflight map[string]interface{}, productID string) error {
+	cp.logger.Printf("setting max-in-flight configuration")
+
+	jobs, err := cp.service.ListStagedProductJobs(productID)
+
+	payload := map[string]interface{}{}
+	jobListString := ""
+	for key, val := range maxInflight {
+		jobGUID, ok := jobs[key]
+		if !ok {
+			return fmt.Errorf("failed to fetch job guid: job name '%s' not found", key)
+		}
+
+		payload[jobGUID] = val
+		jobListString = jobListString + "\n\t" + key
+	}
+	cp.logger.Printf(jobListString + "\n")
+	err = cp.service.UpdateStagedProductMaxInFlight(productID, api.MaxInFlightProperties{
+		Properties: payload,
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to configure max-in-flight: %s", err)
+	}
+	cp.logger.Printf("finished setting up max-in-flight")
 	return nil
 }
 

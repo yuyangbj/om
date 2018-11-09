@@ -95,6 +95,18 @@ type ConfigureProductService struct {
 	updateStagedProductErrandsReturnsOnCall map[int]struct {
 		result1 error
 	}
+	UpdateStagedProductMaxInFlightStub        func(productID string, maxInFlight api.MaxInFlightProperties) error
+	updateStagedProductMaxInFlightMutex       sync.RWMutex
+	updateStagedProductMaxInFlightArgsForCall []struct {
+		productID   string
+		maxInFlight api.MaxInFlightProperties
+	}
+	updateStagedProductMaxInFlightReturns struct {
+		result1 error
+	}
+	updateStagedProductMaxInFlightReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -442,6 +454,55 @@ func (fake *ConfigureProductService) UpdateStagedProductErrandsReturnsOnCall(i i
 	}{result1}
 }
 
+func (fake *ConfigureProductService) UpdateStagedProductMaxInFlight(productID string, maxInFlight api.MaxInFlightProperties) error {
+	fake.updateStagedProductMaxInFlightMutex.Lock()
+	ret, specificReturn := fake.updateStagedProductMaxInFlightReturnsOnCall[len(fake.updateStagedProductMaxInFlightArgsForCall)]
+	fake.updateStagedProductMaxInFlightArgsForCall = append(fake.updateStagedProductMaxInFlightArgsForCall, struct {
+		productID   string
+		maxInFlight api.MaxInFlightProperties
+	}{productID, maxInFlight})
+	fake.recordInvocation("UpdateStagedProductMaxInFlight", []interface{}{productID, maxInFlight})
+	fake.updateStagedProductMaxInFlightMutex.Unlock()
+	if fake.UpdateStagedProductMaxInFlightStub != nil {
+		return fake.UpdateStagedProductMaxInFlightStub(productID, maxInFlight)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.updateStagedProductMaxInFlightReturns.result1
+}
+
+func (fake *ConfigureProductService) UpdateStagedProductMaxInFlightCallCount() int {
+	fake.updateStagedProductMaxInFlightMutex.RLock()
+	defer fake.updateStagedProductMaxInFlightMutex.RUnlock()
+	return len(fake.updateStagedProductMaxInFlightArgsForCall)
+}
+
+func (fake *ConfigureProductService) UpdateStagedProductMaxInFlightArgsForCall(i int) (string, api.MaxInFlightProperties) {
+	fake.updateStagedProductMaxInFlightMutex.RLock()
+	defer fake.updateStagedProductMaxInFlightMutex.RUnlock()
+	return fake.updateStagedProductMaxInFlightArgsForCall[i].productID, fake.updateStagedProductMaxInFlightArgsForCall[i].maxInFlight
+}
+
+func (fake *ConfigureProductService) UpdateStagedProductMaxInFlightReturns(result1 error) {
+	fake.UpdateStagedProductMaxInFlightStub = nil
+	fake.updateStagedProductMaxInFlightReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *ConfigureProductService) UpdateStagedProductMaxInFlightReturnsOnCall(i int, result1 error) {
+	fake.UpdateStagedProductMaxInFlightStub = nil
+	if fake.updateStagedProductMaxInFlightReturnsOnCall == nil {
+		fake.updateStagedProductMaxInFlightReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.updateStagedProductMaxInFlightReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *ConfigureProductService) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -459,6 +520,8 @@ func (fake *ConfigureProductService) Invocations() map[string][][]interface{} {
 	defer fake.updateStagedProductJobResourceConfigMutex.RUnlock()
 	fake.updateStagedProductErrandsMutex.RLock()
 	defer fake.updateStagedProductErrandsMutex.RUnlock()
+	fake.updateStagedProductMaxInFlightMutex.RLock()
+	defer fake.updateStagedProductMaxInFlightMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

@@ -132,6 +132,13 @@ errand-config:
     pre-delete-state: when-changed
 `
 
+const maxInFlightConfigFile = `---
+max-in-flight:
+  a-job: 50
+  b-job: 50%
+  c-job: default
+`
+
 var _ = Describe("ConfigureProduct", func() {
 	Describe("Execute", func() {
 		var (
@@ -729,6 +736,96 @@ var _ = Describe("ConfigureProduct", func() {
 					Expect(fmt.Sprintf(format, content...)).To(Equal("finished configuring product"))
 				})
 			})
+
+			Context("when the config file contains only max-in-flight", func() {
+				BeforeEach(func() {
+					service.ListStagedProductJobsReturns(map[string]string{
+						"a-job": "a-job-id123",
+						"b-job": "b-job-id456",
+						"c-job": "c-job-id789",
+					}, nil)
+				})
+
+				It("configures only the max-in-flight properties", func() {
+					client := commands.NewConfigureProduct(func() []string { return nil }, service, logger)
+
+					configFile, err = ioutil.TempFile("", "")
+					Expect(err).NotTo(HaveOccurred())
+
+					_, err = configFile.WriteString(maxInFlightConfigFile)
+					Expect(err).NotTo(HaveOccurred())
+
+					err = client.Execute([]string{
+						"--product-name", "cf",
+						"--config", configFile.Name(),
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(service.ListStagedProductsCallCount()).To(Equal(1))
+					Expect(service.UpdateStagedProductPropertiesCallCount()).To(Equal(0))
+					Expect(service.UpdateStagedProductNetworksAndAZsCallCount()).To(Equal(0))
+					Expect(service.UpdateStagedProductJobResourceConfigCallCount()).To(Equal(0))
+					Expect(service.UpdateStagedProductErrandsCallCount()).To(Equal(0))
+					Expect(service.UpdateStagedProductMaxInFlightCallCount()).To(Equal(1))
+					Expect(service.ListStagedProductJobsCallCount()).To(Equal(1))
+
+					argProductID, argMaxInFlight := service.UpdateStagedProductMaxInFlightArgsForCall(0)
+					Expect(argProductID).To(Equal("some-product-guid"))
+					Expect(argMaxInFlight.Properties).To(HaveLen(3))
+
+					format, content := logger.PrintfArgsForCall(0)
+					Expect(fmt.Sprintf(format, content...)).To(Equal("configuring product..."))
+
+					format, content = logger.PrintfArgsForCall(1)
+					Expect(fmt.Sprintf(format, content...)).To(Equal("setting max-in-flight configuration"))
+
+					format, content = logger.PrintfArgsForCall(2)
+					Expect(fmt.Sprintf(format, content...)).To(MatchRegexp(`\n\t\w-job\n\t\w-job\n\t\w-job\n`))
+
+					format, content = logger.PrintfArgsForCall(3)
+					Expect(fmt.Sprintf(format, content...)).To(Equal("finished setting up max-in-flight"))
+				})
+
+				Context("when job name does not have a corresponding job guid", func() {
+					BeforeEach(func() {
+						service.ListStagedProductJobsReturns(map[string]string{
+							"a-job": "a-job-id123",
+							"b-job": "b-job-id456",
+						}, nil)
+					})
+
+					It("returns an error indicating unknown job name", func() {
+						client := commands.NewConfigureProduct(func() []string { return nil }, service, logger)
+
+						configFile, err = ioutil.TempFile("", "")
+						Expect(err).NotTo(HaveOccurred())
+
+						_, err = configFile.WriteString(maxInFlightConfigFile)
+						Expect(err).NotTo(HaveOccurred())
+
+						err = client.Execute([]string{
+							"--product-name", "cf",
+							"--config", configFile.Name(),
+						})
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(Equal("failed to fetch job guid: job name 'c-job' not found"))
+
+						Expect(service.ListStagedProductsCallCount()).To(Equal(1))
+						Expect(service.UpdateStagedProductPropertiesCallCount()).To(Equal(0))
+						Expect(service.UpdateStagedProductNetworksAndAZsCallCount()).To(Equal(0))
+						Expect(service.UpdateStagedProductJobResourceConfigCallCount()).To(Equal(0))
+						Expect(service.UpdateStagedProductErrandsCallCount()).To(Equal(0))
+						Expect(service.ListStagedProductJobsCallCount()).To(Equal(1))
+						Expect(service.UpdateStagedProductMaxInFlightCallCount()).To(Equal(0))
+
+						format, content := logger.PrintfArgsForCall(0)
+						Expect(fmt.Sprintf(format, content...)).To(Equal("configuring product..."))
+
+						format, content = logger.PrintfArgsForCall(1)
+						Expect(fmt.Sprintf(format, content...)).To(Equal("setting max-in-flight configuration"))
+					})
+				})
+			})
 		})
 
 		Context("when the instance count is not an int", func() {
@@ -1007,6 +1104,7 @@ var _ = Describe("ConfigureProduct", func() {
 					Expect(err).To(MatchError("failed to configure product: some product error"))
 				})
 			})
+
 			Context("when errand config errors", func() {
 				var (
 					configFile *os.File

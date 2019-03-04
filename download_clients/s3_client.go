@@ -78,11 +78,11 @@ func NewS3Client(stower Stower, config S3Configuration, progressWriter io.Writer
 	}, nil
 }
 
-func (s3 S3Client) GetAllProductVersions(slug string) ([]string, error) {
+func (s3 S3Client) GetAllProductVersions(slug string) ([]Versioner, error) {
 	return s3.getAllProductVersionsFromPath(slug, s3.productPath)
 }
 
-func (s3 S3Client) getAllProductVersionsFromPath(slug, path string) ([]string, error) {
+func (s3 S3Client) getAllProductVersionsFromPath(slug, path string) ([]Versioner, error) {
 	files, err := s3.listFiles()
 	if err != nil {
 		return nil, err

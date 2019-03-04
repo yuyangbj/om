@@ -64,22 +64,26 @@ type Stemcell struct {
 	Version string
 }
 
-func (p *pivnetClient) GetAllProductVersions(slug string) ([]string, error) {
+func (p *pivnetClient) GetAllProductVersions(slug string) ([]Versioner, error) {
 	releases, err := p.downloader.ReleasesForProductSlug(slug)
 	if err != nil {
 		return nil, err
 	}
 
-	var versions []string
+	var versions []Versioner
 	for _, release := range releases {
-		versions = append(versions, release.Version)
+		versions = append(versions, &PivnetVersion{
+			releaseId: release.ID,
+			version:   release.Version,
+			slug:      slug,
+		})
 	}
 	return versions, nil
 }
 
-func (p *pivnetClient) GetLatestProductFile(slug, version, glob string) (*FileArtifact, error) {
+func (p *pivnetClient) GetLatestProductFile(version PivnetVersion, glob string) (*FileArtifact, error) {
 	// 1. Check the release for given version / slug
-	release, err := p.downloader.ReleaseForVersion(slug, version)
+	release, err := p.downloader.ReleaseForVersion(version.slug, version.version)
 	if err != nil {
 		return nil, fmt.Errorf("could not fetch the release for %s %s: %s", slug, version, err)
 	}

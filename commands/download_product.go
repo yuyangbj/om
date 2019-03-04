@@ -32,7 +32,7 @@ type outputList struct {
 }
 
 type ProductDownloader interface {
-	GetAllProductVersions(slug string) ([]string, error)
+	GetAllProductVersions(slug string) ([]download_clients.Versioner, error)
 	GetLatestProductFile(slug, version, glob string) (*download_clients.FileArtifact, error)
 	DownloadProductToFile(fa *download_clients.FileArtifact, file *os.File) error
 	GetLatestStemcellForProduct(fa *download_clients.FileArtifact, downloadedProductFileName string) (*download_clients.Stemcell, error)
@@ -198,11 +198,11 @@ func (c *DownloadProduct) determineProductVersion() (string, error) {
 
 		var versions version.Collection
 		for _, productVersion := range productVersions {
-			if !re.MatchString(productVersion) {
+			if !re.MatchString(productVersion.Version()) {
 				continue
 			}
 
-			v, err := version.NewVersion(productVersion)
+			v, err := version.NewVersion(productVersion.Version())
 			if err != nil {
 				c.logger.Info(fmt.Sprintf("warning: could not parse semver version from: %s", productVersion))
 				continue

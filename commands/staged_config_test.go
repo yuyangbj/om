@@ -50,6 +50,9 @@ var _ = Describe("StagedConfig", func() {
 			Expect(fakeService.GetStagedProductNetworksAndAZsCallCount()).To(Equal(1))
 			Expect(fakeService.GetStagedProductNetworksAndAZsArgsForCall(0)).To(Equal("some-product-guid"))
 
+			Expect(fakeService.GetStagedProductSyslogConfigurationCallCount()).To(Equal(1))
+			Expect(fakeService.GetStagedProductSyslogConfigurationArgsForCall(0)).To(Equal("some-product-guid"))
+
 			Expect(fakeService.ListStagedProductJobsCallCount()).To(Equal(1))
 			Expect(fakeService.ListStagedProductJobsArgsForCall(0)).To(Equal("some-product-guid"))
 
@@ -84,6 +87,16 @@ errand-config:
     pre-delete-state: do-something
   second-errand:
     post-deploy-state: false
+syslog_configuration:
+  enabled: true
+  address: example.com
+  port: 514
+  transport_protocol: tcp
+  queue_size: null
+  tls_enabled: true
+  permitted_peer: "*.example.com"
+  ssl_ca_certificate: |
+    -----BEGIN CERTIFICATE-----\r\nMIIBsjCCARug...
 `)))
 		})
 

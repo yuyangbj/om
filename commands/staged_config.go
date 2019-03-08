@@ -28,6 +28,7 @@ type stagedConfigService interface {
 	GetStagedProductByName(product string) (api.StagedProductsFindOutput, error)
 	GetStagedProductJobResourceConfig(productGUID, jobGUID string) (api.JobProperties, error)
 	GetStagedProductNetworksAndAZs(product string) (map[string]interface{}, error)
+	GetStagedProductSyslogConfiguration(product string) (map[string]interface{}, error)
 	GetStagedProductProperties(product string) (map[string]api.ResponseProperty, error)
 	ListDeployedProducts() ([]api.DeployedProductOutput, error)
 	ListStagedProductJobs(productGUID string) (map[string]string, error)

@@ -38,6 +38,11 @@ type UpdateStagedProductNetworksAndAZsInput struct {
 	NetworksAndAZs string
 }
 
+type UpdateSyslogConfigurationInput struct {
+	GUID                string
+	SyslogConfiguration string
+}
+
 type ResponseProperty struct {
 	Value          interface{}
 	SelectedOption string `yaml:"selected_option,omitempty"`
@@ -305,6 +310,22 @@ func (a Api) UpdateStagedProductNetworksAndAZs(input UpdateStagedProductNetworks
 	)
 	if err != nil {
 		return errors.Wrap(err, "could not make api request to staged product networks_and_azs endpoint")
+	}
+
+	if err = validateStatusOK(resp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a Api) UpdateSyslogConfiguration(input UpdateSyslogConfigurationInput) error {
+	resp, err := a.sendAPIRequest("PUT",
+		fmt.Sprintf("/api/v0/staged/products/%s/syslog_configuration", input.GUID),
+		[]byte(fmt.Sprintf(`{"syslog_configuration": %s}`, input.SyslogConfiguration)),
+	)
+	if err != nil {
+		return errors.Wrap(err, "could not make api request to staged product syslog_configuration endpoint")
 	}
 
 	if err = validateStatusOK(resp); err != nil {

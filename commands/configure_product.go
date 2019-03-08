@@ -38,6 +38,7 @@ type configureProductService interface {
 	UpdateStagedProductJobResourceConfig(productGUID, jobGUID string, jobProperties api.JobProperties) error
 	UpdateStagedProductNetworksAndAZs(api.UpdateStagedProductNetworksAndAZsInput) error
 	UpdateStagedProductProperties(api.UpdateStagedProductPropertiesInput) error
+	UpdateSyslogConfiguration(api.UpdateSyslogConfigurationInput) error
 }
 
 type configureProduct struct {
@@ -95,6 +96,11 @@ func (cp ConfigureProduct) Execute(args []string) error {
 	}
 
 	err = cp.configureResources(cfg, productGUID)
+	if err != nil {
+		return err
+	}
+
+	err = cp.configureSyslog(cfg, productGUID)
 	if err != nil {
 		return err
 	}
@@ -251,6 +257,31 @@ func (cp *ConfigureProduct) configureNetwork(cfg configureProduct, productGUID s
 		return fmt.Errorf("failed to configure product: %s", err)
 	}
 	cp.logger.Printf("finished setting up network")
+
+	return nil
+}
+
+func (cp *ConfigureProduct) configureSyslog(cfg configureProduct, productGUID string) error {
+	if cfg.SyslogConfiguration == nil {
+		cp.logger.Println("syslog configuration is not provided, nothing to do here")
+		return nil
+	}
+
+	syslogProperties, err := getJSONProperties(cfg.SyslogConfiguration)
+	if err != nil {
+		return err
+	}
+
+	cp.logger.Printf("setting up syslog")
+	err = cp.service.UpdateSyslogConfiguration(api.UpdateSyslogConfigurationInput{
+		GUID:                productGUID,
+		SyslogConfiguration: syslogProperties,
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to configure product: %s", err)
+	}
+	cp.logger.Printf("finished setting up syslog")
 
 	return nil
 }

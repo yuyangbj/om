@@ -17,13 +17,15 @@ import (
 
 var _ = Describe("configure-product command", func() {
 	var (
-		server                  *httptest.Server
-		productPropertiesMethod string
-		productPropertiesBody   []byte
-		productNetworkMethod    string
-		productNetworkBody      []byte
-		resourceConfigMethod    []string
-		resourceConfigBody      [][]byte
+		server                    *httptest.Server
+		productPropertiesMethod   string
+		productPropertiesBody     []byte
+		productNetworkMethod      string
+		productNetworkBody        []byte
+		resourceConfigMethod      []string
+		resourceConfigBody        [][]byte
+		syslogConfigurationMethod string
+		syslogConfigurationBody   []byte
 	)
 
 	BeforeEach(func() {
@@ -100,6 +102,14 @@ var _ = Describe("configure-product command", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				resourceConfigBody = append(resourceConfigBody, body)
+
+				_, err = w.Write([]byte(`{}`))
+				Expect(err).ToNot(HaveOccurred())
+			case "/api/v0/staged/products/some-product-guid/syslog_configuration":
+				var err error
+				syslogConfigurationMethod = req.Method
+				syslogConfigurationBody, err = ioutil.ReadAll(req.Body)
+				Expect(err).NotTo(HaveOccurred())
 
 				_, err = w.Write([]byte(`{}`))
 				Expect(err).ToNot(HaveOccurred())
@@ -194,7 +204,7 @@ var _ = Describe("configure-product command", func() {
 			os.RemoveAll(configFile.Name())
 		})
 
-		It("successfully configures any product", func() {
+		FIt("successfully configures any product", func() {
 			configFile, err = ioutil.TempFile("", "")
 			Expect(err).NotTo(HaveOccurred())
 
@@ -248,6 +258,16 @@ var _ = Describe("configure-product command", func() {
         },
         "elb_names": null
       }`))
+
+			Expect(syslogConfigurationMethod).To(Equal("PUT"))
+			Expect(syslogConfigurationBody).To(MatchJSON(`{"syslog_configuration": {
+				"enabled": true,
+				"address": "example.com",
+				"port": 514,
+				"transport_protocol": "udp",
+				"queue_size": null,
+				"tls_enabled": false
+  			}}`))
 		})
 	})
 
@@ -385,4 +405,11 @@ resource-config:
     instances: automatic
     persistent_disk: { size_mb: "20480" }
     instance_type: { id: m1.medium }
+syslog-configuration: 
+  enabled: true
+  address: "example.com"
+  port: 514
+  transport_protocol: "udp"
+  queue_size: null
+  tls_enabled: false
 `

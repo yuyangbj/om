@@ -711,7 +711,7 @@ var _ = Describe("StagedProducts", func() {
 		})
 	})
 
-	Describe("UpdateStagedProductNetworksAndAZs", func() {
+	Describe("UpdateStagedProductSyslogConfiguration", func() {
 		BeforeEach(func() {
 			client.DoStub = func(req *http.Request) (*http.Response, error) {
 				var resp *http.Response
@@ -721,36 +721,43 @@ var _ = Describe("StagedProducts", func() {
 						StatusCode: http.StatusOK,
 						Body:       ioutil.NopCloser(bytes.NewBufferString(`{}`)),
 					}
-				case "/api/v0/staged/products/some-product-guid/networks_and_azs":
+				case "/api/v0/staged/products/some-product-guid/syslog_configuration":
 					resp = &http.Response{
 						StatusCode: http.StatusOK,
-						Body:       ioutil.NopCloser(bytes.NewBufferString(`{}`)),
+						Body: ioutil.NopCloser(bytes.NewBufferString(`{
+  							"syslog_configuration": {
+							"enabled": true,
+							"address": "example.com",
+							"port": 514,
+   							"transport_protocol": "tcp"
+  							}
+						}`)),
 					}
 				}
 				return resp, nil
 			}
 		})
 
-		It("configures the networks for the given staged product in the Ops Manager", func() {
-			err := service.UpdateStagedProductNetworksAndAZs(api.UpdateStagedProductNetworksAndAZsInput{
+		It("configures the syslog for the given staged product in the Ops Manager", func() {
+			err := service.UpdateSyslogConfiguration(api.UpdateSyslogConfigurationInput{
 				GUID: "some-product-guid",
-				NetworksAndAZs: `{
+				SyslogConfiguration: `{
 					"key": "value"
 				}`,
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			By("configuring the product properties")
+			By("configuring the syslog properties")
 			Expect(client.DoCallCount()).To(Equal(1))
 			req := client.DoArgsForCall(0)
-			Expect(req.URL.Path).To(Equal("/api/v0/staged/products/some-product-guid/networks_and_azs"))
+			Expect(req.URL.Path).To(Equal("/api/v0/staged/products/some-product-guid/syslog_configuration"))
 			Expect(req.Method).To(Equal("PUT"))
 			Expect(req.Header.Get("Content-Type")).To(Equal("application/json"))
 
 			reqBody, err := ioutil.ReadAll(req.Body)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(reqBody).To(MatchJSON(`{
-				"networks_and_azs": {
+				"syslog_configuration": {
 					"key": "value"
 				}
 			}`))
@@ -763,11 +770,11 @@ var _ = Describe("StagedProducts", func() {
 				})
 
 				It("returns an error", func() {
-					err := service.UpdateStagedProductNetworksAndAZs(api.UpdateStagedProductNetworksAndAZsInput{
-						GUID:           "foo",
-						NetworksAndAZs: `{}`,
+					err := service.UpdateSyslogConfiguration(api.UpdateSyslogConfigurationInput{
+						GUID:                "foo",
+						SyslogConfiguration: `{}`,
 					})
-					Expect(err).To(MatchError("could not make api request to staged product networks_and_azs endpoint: could not send api request to PUT /api/v0/staged/products/foo/networks_and_azs: nope"))
+					Expect(err).To(MatchError("could not make api request to staged product syslog_configuration endpoint: could not send api request to PUT /api/v0/staged/products/foo/syslog_configuration: nope"))
 				})
 			})
 
@@ -780,9 +787,9 @@ var _ = Describe("StagedProducts", func() {
 				})
 
 				It("returns an error", func() {
-					err := service.UpdateStagedProductNetworksAndAZs(api.UpdateStagedProductNetworksAndAZsInput{
-						GUID:           "foo",
-						NetworksAndAZs: `{}`,
+					err := service.UpdateSyslogConfiguration(api.UpdateSyslogConfigurationInput{
+						GUID:                "foo",
+						SyslogConfiguration: `{}`,
 					})
 					Expect(err).To(MatchError(ContainSubstring("request failed: unexpected response")))
 				})

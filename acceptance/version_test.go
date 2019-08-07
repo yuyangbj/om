@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("version command", func() {
+var _ = FDescribe("version command", func() {
 	var version string
 	var pathToVersionedMain string
 

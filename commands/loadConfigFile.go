@@ -2,7 +2,7 @@ package commands
 
 import (
 	"fmt"
-	"github.com/pivotal-cf/jhanda"
+	"github.com/jessevdk/go-flags"
 	"github.com/pivotal-cf/om/interpolate"
 	"gopkg.in/yaml.v2"
 	"reflect"
@@ -14,11 +14,10 @@ import (
 // To load vars, VarsFile and/or VarsEnv must exist in the command struct being passed in.
 // If VarsEnv is used, envFunc must be defined instead of nil
 func loadConfigFile(args []string, command interface{}, envFunc func() []string) error {
-	_, err := jhanda.Parse(command, args)
 	commandValue := reflect.ValueOf(command).Elem()
 	configFile := commandValue.FieldByName("ConfigFile").String()
 	if configFile == "" {
-		return err
+		return nil
 	}
 
 	varsFileField := commandValue.FieldByName("VarsFile")
@@ -52,7 +51,7 @@ func loadConfigFile(args []string, command interface{}, envFunc func() []string)
 		}
 	}
 
-	contents, err = interpolate.Execute(interpolate.Options{
+	contents, err := interpolate.Execute(interpolate.Options{
 		TemplateFile:  configFile,
 		VarsEnvs:      varsEnv,
 		VarsFiles:     varsField,
@@ -85,6 +84,6 @@ func loadConfigFile(args []string, command interface{}, envFunc func() []string)
 
 	}
 	fileArgs = append(fileArgs, args...)
-	_, err = jhanda.Parse(command, fileArgs)
+	_, err = flags.ParseArgs(command, fileArgs)
 	return err
 }

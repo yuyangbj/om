@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/jessevdk/go-flags"
+	"github.com/pivotal-cf/om/api"
+	"github.com/pivotal-cf/om/formcontent"
 	"github.com/pivotal-cf/om/interpolate"
 	"log"
 	"net/http"
@@ -11,18 +14,11 @@ import (
 
 	"time"
 
-	"github.com/olekukonko/tablewriter"
-	"github.com/pivotal-cf/om/renderers"
 	"github.com/pivotal/uilive"
 	"gopkg.in/yaml.v2"
 
-	"github.com/pivotal-cf/jhanda"
-	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
-	"github.com/pivotal-cf/om/extractor"
-	"github.com/pivotal-cf/om/formcontent"
 	"github.com/pivotal-cf/om/network"
-	"github.com/pivotal-cf/om/presenters"
 	"github.com/pivotal-cf/om/progress"
 
 	_ "github.com/pivotal-cf/om/download_clients"
@@ -36,32 +32,38 @@ type httpClient interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
-type options struct {
+type globalOptions struct {
 	DecryptionPassphrase string `yaml:"decryption-passphrase" short:"d"  long:"decryption-passphrase" env:"OM_DECRYPTION_PASSPHRASE"             description:"Passphrase to decrypt the installation if the Ops Manager VM has been rebooted (optional for most commands)"`
 	ClientID             string `yaml:"client-id"             short:"c"  long:"client-id"             env:"OM_CLIENT_ID"                           description:"Client ID for the Ops Manager VM (not required for unauthenticated commands)"`
 	ClientSecret         string `yaml:"client-secret"         short:"s"  long:"client-secret"         env:"OM_CLIENT_SECRET"                       description:"Client Secret for the Ops Manager VM (not required for unauthenticated commands)"`
-	Help                 bool   `                             short:"h"  long:"help"                                             default:"false" description:"prints this usage information"`
+	Help                 bool   `                             short:"h"  long:"help"                                                               description:"prints this usage information"`
 	Password             string `yaml:"password"              short:"p"  long:"password"              env:"OM_PASSWORD"                            description:"admin password for the Ops Manager VM (not required for unauthenticated commands)"`
 	ConnectTimeout       int    `yaml:"connect-timeout"       short:"o"  long:"connect-timeout"       env:"OM_CONNECT_TIMEOUT"     default:"10"    description:"timeout in seconds to make TCP connections"`
 	RequestTimeout       int    `yaml:"request-timeout"       short:"r"  long:"request-timeout"       env:"OM_REQUEST_TIMEOUT"     default:"1800"  description:"timeout in seconds for HTTP requests to Ops Manager"`
-	SkipSSLValidation    bool   `yaml:"skip-ssl-validation"   short:"k"  long:"skip-ssl-validation"   env:"OM_SKIP_SSL_VALIDATION" default:"false" description:"skip ssl certificate validation during http requests"`
+	SkipSSLValidation    bool   `yaml:"skip-ssl-validation"   short:"k"  long:"skip-ssl-validation"   env:"OM_SKIP_SSL_VALIDATION"                 description:"skip ssl certificate validation during http requests"`
 	Target               string `yaml:"target"                short:"t"  long:"target"                env:"OM_TARGET"                              description:"location of the Ops Manager VM"`
-	Trace                bool   `yaml:"trace"                 short:"tr" long:"trace"                 env:"OM_TRACE"                               description:"prints HTTP requests and response payloads"`
+	Trace                bool   `yaml:"trace"                            long:"trace"                 env:"OM_TRACE"                               description:"prints HTTP requests and response payloads"`
 	Username             string `yaml:"username"              short:"u"  long:"username"              env:"OM_USERNAME"                            description:"admin username for the Ops Manager VM (not required for unauthenticated commands)"`
 	Env                  string `                             short:"e"  long:"env"                                                              description:"env file with login credentials"`
-	Version              bool   `                             short:"v"  long:"version"                                          default:"false" description:"prints the om release version"`
+	Version              bool   `                             short:"v"  long:"version"                                                          description:"prints the om release version"`
 	VarsEnv              string `                                                                     env:"OM_VARS_ENV"      experimental:"true" description:"load vars from environment variables by specifying a prefix (e.g.: 'MY' to load MY_var=value)"`
 }
 
 func main() {
-	applySleepDuration, _ := time.ParseDuration(applySleepDurationString)
+	//applySleepDuration, _ := time.ParseDuration(applySleepDurationString)
 
 	stdout := log.New(os.Stdout, "", 0)
 	stderr := log.New(os.Stderr, "", 0)
 
-	var global options
+	var global globalOptions
 
-	args, err := jhanda.Parse(&global, os.Args[1:])
+	parser := flags.NewNamedParser("om", flags.PrintErrors|flags.PassAfterNonOption|flags.PassDoubleDash)
+	_, err := parser.AddGroup("global", "global", &global)
+	if err != nil {
+		stderr.Fatal(err)
+	}
+
+	args, err := parser.Parse()
 	if err != nil {
 		stderr.Fatal(err)
 	}
@@ -71,26 +73,12 @@ func main() {
 		stderr.Fatal(err)
 	}
 
-	globalFlagsUsage, err := jhanda.PrintUsage(global)
-	if err != nil {
-		stderr.Fatal(err)
-	}
-
-	var command string
-	if len(args) > 0 {
-		command, args = args[0], args[1:]
-	}
-
 	if global.Version {
-		command = "version"
+		args = []string{"version"}
 	}
 
-	if global.Help {
-		command = "help"
-	}
-
-	if command == "" {
-		command = "help"
+	if global.Help || len(args) == 0 {
+		args = []string{"help"}
 	}
 
 	requestTimeout := time.Duration(global.RequestTimeout) * time.Second
@@ -134,82 +122,100 @@ func main() {
 		Logger:                 stderr,
 	})
 
-	logWriter := commands.NewLogWriter(os.Stdout)
-	tableWriter := tablewriter.NewWriter(os.Stdout)
+	//logWriter := commands.NewLogWriter(os.Stdout)
+	//tableWriter := tablewriter.NewWriter(os.Stdout)
 
 	form := formcontent.NewForm()
 
-	metadataExtractor := extractor.MetadataExtractor{}
+	//metadataExtractor := extractor.MetadataExtractor{}
 
-	presenter := presenters.NewPresenter(presenters.NewTablePresenter(tableWriter), presenters.NewJSONPresenter(os.Stdout))
-	envRendererFactory := renderers.NewFactory(renderers.NewEnvGetter())
+	//presenter := presenters.NewPresenter(presenters.NewTablePresenter(tableWriter), presenters.NewJSONPresenter(os.Stdout))
+	//envRendererFactory := renderers.NewFactory(renderers.NewEnvGetter())
 
-	commandSet := jhanda.CommandSet{}
-	commandSet["activate-certificate-authority"] = commands.NewActivateCertificateAuthority(api, stdout)
-	commandSet["apply-changes"] = commands.NewApplyChanges(api, api, logWriter, stdout, applySleepDuration)
-	commandSet["assign-stemcell"] = commands.NewAssignStemcell(api, stdout)
-	commandSet["assign-multi-stemcell"] = commands.NewAssignMultiStemcell(api, stdout)
-	commandSet["available-products"] = commands.NewAvailableProducts(api, presenter, stdout)
-	commandSet["bosh-env"] = commands.NewBoshEnvironment(api, stdout, global.Target, envRendererFactory)
-	commandSet["certificate-authorities"] = commands.NewCertificateAuthorities(api, presenter)
-	commandSet["certificate-authority"] = commands.NewCertificateAuthority(api, presenter, stdout)
-	commandSet["config-template"] = commands.NewConfigTemplate(commands.DefaultProvider())
-	commandSet["configure-authentication"] = commands.NewConfigureAuthentication(api, stdout)
-	commandSet["configure-director"] = commands.NewConfigureDirector(os.Environ, api, stdout)
-	commandSet["configure-ldap-authentication"] = commands.NewConfigureLDAPAuthentication(api, stdout)
-	commandSet["configure-product"] = commands.NewConfigureProduct(os.Environ, api, global.Target, stdout)
-	commandSet["configure-saml-authentication"] = commands.NewConfigureSAMLAuthentication(api, stdout)
-	commandSet["create-certificate-authority"] = commands.NewCreateCertificateAuthority(api, presenter)
-	commandSet["create-vm-extension"] = commands.NewCreateVMExtension(os.Environ, api, stdout)
-	commandSet["credential-references"] = commands.NewCredentialReferences(api, presenter, stdout)
-	commandSet["credentials"] = commands.NewCredentials(api, presenter, stdout)
-	commandSet["curl"] = commands.NewCurl(api, stdout, stderr)
-	commandSet["delete-certificate-authority"] = commands.NewDeleteCertificateAuthority(api, stdout)
-	commandSet["delete-installation"] = commands.NewDeleteInstallation(api, logWriter, stdout, os.Stdin, applySleepDuration)
-	commandSet["delete-ssl-certificate"] = commands.NewDeleteSSLCertificate(api, stdout)
-	commandSet["delete-product"] = commands.NewDeleteProduct(api)
-	commandSet["delete-unused-products"] = commands.NewDeleteUnusedProducts(api, stdout)
-	commandSet["deployed-manifest"] = commands.NewDeployedManifest(api, stdout)
-	commandSet["deployed-products"] = commands.NewDeployedProducts(presenter, api)
-	commandSet["diagnostic-report"] = commands.NewDiagnosticReport(presenter, api)
-	commandSet["download-product"] = commands.NewDownloadProduct(os.Environ, stdout, stderr, os.Stderr)
-	commandSet["errands"] = commands.NewErrands(presenter, api)
-	commandSet["export-installation"] = commands.NewExportInstallation(api, stderr)
-	commandSet["generate-certificate"] = commands.NewGenerateCertificate(api, stdout)
-	commandSet["generate-certificate-authority"] = commands.NewGenerateCertificateAuthority(api, presenter)
-	commandSet["help"] = commands.NewHelp(os.Stdout, globalFlagsUsage, commandSet)
-	commandSet["import-installation"] = commands.NewImportInstallation(form, api, global.DecryptionPassphrase, stdout)
-	commandSet["installation-log"] = commands.NewInstallationLog(api, stdout)
-	commandSet["installations"] = commands.NewInstallations(api, presenter)
-	commandSet["interpolate"] = commands.NewInterpolate(os.Environ, stdout)
-	commandSet["pending-changes"] = commands.NewPendingChanges(presenter, api)
-	commandSet["pre-deploy-check"] = commands.NewPreDeployCheck(presenter, api, stdout)
-	commandSet["regenerate-certificates"] = commands.NewRegenerateCertificates(api, stdout)
-	commandSet["stage-product"] = commands.NewStageProduct(api, stdout)
-	commandSet["ssl-certificate"] = commands.NewSSLCertificate(api, presenter)
-	commandSet["staged-config"] = commands.NewStagedConfig(api, stdout)
-	commandSet["staged-director-config"] = commands.NewStagedDirectorConfig(api, stdout)
-	commandSet["staged-manifest"] = commands.NewStagedManifest(api, stdout)
-	commandSet["staged-products"] = commands.NewStagedProducts(presenter, api)
-	commandSet["tile-metadata"] = commands.NewTileMetadata(stdout)
-	commandSet["unstage-product"] = commands.NewUnstageProduct(api, stdout)
-	commandSet["update-ssl-certificate"] = commands.NewUpdateSSLCertificate(api, stdout)
-	commandSet["upload-product"] = commands.NewUploadProduct(form, metadataExtractor, api, stdout)
-	commandSet["upload-stemcell"] = commands.NewUploadStemcell(form, api, stdout)
-	commandSet["version"] = commands.NewVersion(version, os.Stdout)
+	//parser.AddCommand("activate-certificate-authority", "", "", commands.NewActivateCertificateAuthority(api, stdout))
+	//parser.AddCommand("apply-changes", "", "", commands.NewApplyChanges(api, api, logWriter, stdout, applySleepDuration))
+	//parser.AddCommand("assign-stemcell", "", "", commands.NewAssignStemcell(api, stdout))
+	//parser.AddCommand("assign-multi-stemcell", "", "", commands.NewAssignMultiStemcell(api, stdout))
+	//parser.AddCommand("available-products", "", "", commands.NewAvailableProducts(api, presenter, stdout))
+	//parser.AddCommand("bosh-env", "", "", commands.NewBoshEnvironment(api, stdout, global.Target, envRendererFactory))
+	//parser.AddCommand("certificate-authorities", "", "", commands.NewCertificateAuthorities(api, presenter))
+	//parser.AddCommand("certificate-authority", "", "", commands.NewCertificateAuthority(api, presenter, stdout))
+	//parser.AddCommand("config-template", "", "", commands.NewConfigTemplate(commands.DefaultProvider()))
+	//parser.AddCommand("configure-authentication", "", "", commands.NewConfigureAuthentication(api, stdout))
+	//parser.AddCommand("configure-director", "", "", commands.NewConfigureDirector(os.Environ, api, stdout))
+	//parser.AddCommand("configure-ldap-authentication", "", "", commands.NewConfigureLDAPAuthentication(api, stdout))
+	//parser.AddCommand("configure-product", "", "", commands.NewConfigureProduct(os.Environ, api, global.Target, stdout))
+	//parser.AddCommand("configure-saml-authentication", "", "", commands.NewConfigureSAMLAuthentication(api, stdout))
+	//parser.AddCommand("create-certificate-authority", "", "", commands.NewCreateCertificateAuthority(api, presenter))
+	//parser.AddCommand("create-vm-extension", "", "", commands.NewCreateVMExtension(os.Environ, api, stdout))
+	//parser.AddCommand("credential-references", "", "", commands.NewCredentialReferences(api, presenter, stdout))
+	//parser.AddCommand("credentials", "", "", commands.NewCredentials(api, presenter, stdout))
+	//parser.AddCommand("curl", "", "", commands.NewCurl(api, stdout, stderr))
+	//parser.AddCommand("delete-certificate-authority", "", "", commands.NewDeleteCertificateAuthority(api, stdout))
+	//parser.AddCommand("delete-installation", "", "", commands.NewDeleteInstallation(api, logWriter, stdout, os.Stdin, applySleepDuration))
+	//parser.AddCommand("delete-ssl-certificate", "", "", commands.NewDeleteSSLCertificate(api, stdout))
+	//parser.AddCommand("delete-product", "", "", commands.NewDeleteProduct(api))
+	//parser.AddCommand("delete-unused-products", "", "", commands.NewDeleteUnusedProducts(api, stdout))
+	//parser.AddCommand("deployed-manifest", "", "", commands.NewDeployedManifest(api, stdout))
+	//parser.AddCommand("deployed-products", "", "", commands.NewDeployedProducts(presenter, api))
+	//parser.AddCommand("diagnostic-report", "", "", commands.NewDiagnosticReport(presenter, api))
+	//parser.AddCommand("download-product", "", "", commands.NewDownloadProduct(os.Environ, stdout, stderr, os.Stderr))
+	//parser.AddCommand("errands", "", "", commands.NewErrands(presenter, api))
+	//parser.AddCommand("export-installation", "", "", commands.NewExportInstallation(api, stderr))
+	//parser.AddCommand("generate-certificate", "", "", commands.NewGenerateCertificate(api, stdout))
+	//parser.AddCommand("generate-certificate-authority", "", "", commands.NewGenerateCertificateAuthority(api, presenter))
+	//parser.AddCommand("import-installation", "", "", commands.NewImportInstallation(form, api, global.DecryptionPassphrase, stdout))
+	//parser.AddCommand("installation-log", "", "", commands.NewInstallationLog(api, stdout))
+	//parser.AddCommand("installations", "", "", commands.NewInstallations(api, presenter))
+	//parser.AddCommand("interpolate", "", "", commands.NewInterpolate(os.Environ, stdout))
+	//parser.AddCommand("pending-changes", "", "", commands.NewPendingChanges(presenter, api))
+	//parser.AddCommand("pre-deploy-check", "", "", commands.NewPreDeployCheck(presenter, api, stdout))
+	//parser.AddCommand("regenerate-certificates", "", "", commands.NewRegenerateCertificates(api, stdout))
+	//parser.AddCommand("stage-product", "", "", commands.NewStageProduct(api, stdout))
+	//parser.AddCommand("ssl-certificate", "", "", commands.NewSSLCertificate(api, presenter))
+	//parser.AddCommand("staged-config", "", "", commands.NewStagedConfig(api, stdout))
+	//parser.AddCommand("staged-director-config", "", "", commands.NewStagedDirectorConfig(api, stdout))
+	//parser.AddCommand("staged-manifest", "", "", commands.NewStagedManifest(api, stdout))
+	//parser.AddCommand("staged-products", "", "", commands.NewStagedProducts(presenter, api))
+	//parser.AddCommand("tile-metadata", "", "", commands.NewTileMetadata(stdout))
+	//parser.AddCommand("unstage-product", "", "", commands.NewUnstageProduct(api, stdout))
+	//parser.AddCommand("update-ssl-certificate", "", "", commands.NewUpdateSSLCertificate(api, stdout))
+	//parser.AddCommand("upload-product", "", "", commands.NewUploadProduct(form, metadataExtractor, api, stdout))
+	parser.AddCommand(
+		"upload-stemcell",
+		"uploads a given stemcell to the Ops Manager targeted",
+		"This command will upload a stemcell to the target Ops Manager. Unless the force flag is used, if the stemcell already exists that upload will be skipped",
+		commands.NewUploadStemcell(form, api, stdout),
+	)
+	parser.AddCommand(
+		"version",
+		"prints the om release version",
+		"This command prints the om release version number.",
+		commands.NewVersion(version, os.Stdout),
+	)
 
-	err = commandSet.Execute(command, args)
+	if args[0] == "help" || args[0] == "" {
+		parser.WriteHelp(os.Stdout)
+		os.Exit(0)
+	}
+
+	parser.Options = parser.Options | flags.HelpFlag
+	_, err = parser.ParseArgs(args)
 	if err != nil {
-		stderr.Fatal(err)
+		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
+			os.Exit(0)
+		} else {
+			os.Exit(1)
+		}
 	}
 }
 
-func setEnvFileProperties(global *options) error {
+func setEnvFileProperties(global *globalOptions) error {
 	if global.Env == "" {
 		return nil
 	}
 
-	var opts options
+	var opts globalOptions
 	_, err := os.Open(global.Env)
 	if err != nil {
 		return fmt.Errorf("env file does not exist: %s", err)
@@ -269,7 +275,7 @@ func setEnvFileProperties(global *options) error {
 	return nil
 }
 
-func checkForVars(opts *options) error {
+func checkForVars(opts *globalOptions) error {
 	var errBuffer []string
 
 	interpolateRegex := regexp.MustCompile(`\(\(.*\)\)`)

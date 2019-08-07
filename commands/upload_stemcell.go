@@ -3,7 +3,6 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/formcontent"
 	"github.com/pivotal-cf/om/network"
@@ -43,23 +42,15 @@ type uploadStemcellService interface {
 	Info() (api.Info, error)
 }
 
-func NewUploadStemcell(multipart multipart, service uploadStemcellService, logger logger) UploadStemcell {
-	return UploadStemcell{
+func NewUploadStemcell(multipart multipart, service uploadStemcellService, logger logger) *UploadStemcell {
+	return &UploadStemcell{
 		multipart: multipart,
 		logger:    logger,
 		service:   service,
 	}
 }
 
-func (us UploadStemcell) Usage() jhanda.Usage {
-	return jhanda.Usage{
-		Description:      "This command will upload a stemcell to the target Ops Manager. Unless the force flag is used, if the stemcell already exists that upload will be skipped",
-		ShortDescription: "uploads a given stemcell to the Ops Manager targeted",
-		Flags:            us.Options,
-	}
-}
-
-func (us UploadStemcell) Execute(args []string) error {
+func (us *UploadStemcell) Execute(args []string) error {
 	err := loadConfigFile(args, &us.Options, nil)
 	if err != nil {
 		return fmt.Errorf("could not parse upload-stemcell flags: %s", err)
@@ -106,7 +97,7 @@ func (us UploadStemcell) Execute(args []string) error {
 	return nil
 }
 
-func (us UploadStemcell) uploadStemcell(stemcellFilename string) (err error) {
+func (us *UploadStemcell) uploadStemcell(stemcellFilename string) (err error) {
 	for i := 0; i <= maxStemcellUploadRetries; i++ {
 		err = us.multipart.AddFile("stemcell[file]", stemcellFilename)
 		if err != nil {
@@ -141,7 +132,7 @@ func (us UploadStemcell) uploadStemcell(stemcellFilename string) (err error) {
 	return err
 }
 
-func (us UploadStemcell) validate() error {
+func (us *UploadStemcell) validate() error {
 	if us.Options.Floating != "true" && us.Options.Floating != "false" {
 		return errors.New("--floating must be \"true\" or \"false\". Default: true")
 	}
@@ -164,7 +155,7 @@ func (us UploadStemcell) validate() error {
 	return nil
 }
 
-func (us UploadStemcell) checkStemcellUploaded() (exists bool, err error) {
+func (us *UploadStemcell) checkStemcellUploaded() (exists bool, err error) {
 	us.logger.Printf("processing stemcell")
 
 	stemcellFilename := us.Options.Stemcell

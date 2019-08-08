@@ -48,7 +48,7 @@ var _ = Describe("UploadProduct", func() {
 
 		err := executeCommand(command, []string{
 			"--product", "/path/to/some-product.tgz",
-		}, nil)
+		})
 		Expect(err).NotTo(HaveOccurred())
 
 		key, file := multipart.AddFileArgsForCall(0)
@@ -79,7 +79,7 @@ var _ = Describe("UploadProduct", func() {
 			err := executeCommand(command, []string{
 				"--product", "/path/to/some-product.tgz",
 				"--polling-interval", "48",
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(fakeService.UploadAvailableProductArgsForCall(0).PollingInterval).To(Equal(48))
 		})
@@ -101,7 +101,7 @@ var _ = Describe("UploadProduct", func() {
 
 			err := executeCommand(command, []string{
 				"--product", "/path/to/some-product.tgz",
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(metadataExtractor.ExtractMetadataCallCount()).To(Equal(1))
 			Expect(fakeService.UploadAvailableProductCallCount()).To(Equal(0))
@@ -137,7 +137,7 @@ var _ = Describe("UploadProduct", func() {
 			err = executeCommand(command, []string{
 				"--product", file.Name(),
 				"--shasum", "2815ab9694a4a2cfd59424a734833010e143a0b2db20be3741507f177f289f44",
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(metadataExtractor.ExtractMetadataCallCount()).To(Equal(1))
 			Expect(fakeService.UploadAvailableProductCallCount()).To(Equal(0))
@@ -160,7 +160,7 @@ var _ = Describe("UploadProduct", func() {
 			err = executeCommand(command, []string{
 				"--product", file.Name(),
 				"--shasum", "not-the-correct-shasum",
-			}, nil)
+			})
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError("expected shasum not-the-correct-shasum does not match file shasum 2815ab9694a4a2cfd59424a734833010e143a0b2db20be3741507f177f289f44"))
 		})
@@ -170,7 +170,7 @@ var _ = Describe("UploadProduct", func() {
 			err := executeCommand(command, []string{
 				"--product", "/path/to/testing.tgz",
 				"--shasum", "not-the-correct-shasum",
-			}, nil)
+			})
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError("open /path/to/testing.tgz: no such file or directory"))
 		})
@@ -199,7 +199,7 @@ var _ = Describe("UploadProduct", func() {
 			err = executeCommand(command, []string{
 				"--product", file.Name(),
 				"--product-version", "1.5.0",
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(metadataExtractor.ExtractMetadataCallCount()).To(Equal(1))
 			Expect(fakeService.UploadAvailableProductCallCount()).To(Equal(0))
@@ -223,7 +223,7 @@ var _ = Describe("UploadProduct", func() {
 			err = executeCommand(command, []string{
 				"--product", file.Name(),
 				"--product-version", "2.5.0",
-			}, nil)
+			})
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError("expected version 2.5.0 does not match product version 1.5.0"))
 		})
@@ -248,7 +248,7 @@ var _ = Describe("UploadProduct", func() {
 
 				err := executeCommand(command, []string{
 					"--product", "/path/to/some-product.tgz",
-				}, nil)
+				})
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(metadataExtractor.ExtractMetadataCallCount()).To(Equal(1))
@@ -265,7 +265,7 @@ var _ = Describe("UploadProduct", func() {
 			fakeService.UploadAvailableProductReturnsOnCall(0, api.UploadAvailableProductOutput{}, errors.Wrap(io.EOF, "some upload error"))
 			fakeService.UploadAvailableProductReturnsOnCall(1, api.UploadAvailableProductOutput{}, nil)
 
-			err := executeCommand(command, []string{"--product", "/some/path"}, nil)
+			err := executeCommand(command, []string{"--product", "/some/path"})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(multipart.AddFileCallCount()).To(Equal(2))
@@ -283,7 +283,7 @@ var _ = Describe("UploadProduct", func() {
 			fakeService.CheckProductAvailabilityReturns(false, nil)
 			fakeService.UploadAvailableProductReturns(api.UploadAvailableProductOutput{}, errors.Wrap(io.EOF, "some upload error"))
 
-			err := executeCommand(command, []string{"--product", "/some/path"}, nil)
+			err := executeCommand(command, []string{"--product", "/some/path"})
 
 			Expect(multipart.AddFileCallCount()).To(Equal(3))
 			Expect(multipart.FinalizeCallCount()).To(Equal(3))
@@ -334,7 +334,7 @@ product: will-be-overridden-by-command-line
 			err = executeCommand(command, []string{
 				"--config", configFile.Name(),
 				"--product", file.Name(),
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(metadataExtractor.ExtractMetadataCallCount()).To(Equal(1))
 			Expect(fakeService.UploadAvailableProductCallCount()).To(Equal(0))
@@ -348,7 +348,7 @@ product: will-be-overridden-by-command-line
 		Context("when an unknown flag is provided", func() {
 			It("returns an error", func() {
 				command := commands.NewUploadProduct(multipart, metadataExtractor, fakeService, logger)
-				err := executeCommand(command, []string{"--badflag"}, nil)
+				err := executeCommand(command, []string{"--badflag"})
 				Expect(err).To(MatchError("unknown flag `badflag'"))
 			})
 		})
@@ -356,7 +356,7 @@ product: will-be-overridden-by-command-line
 		Context("when the product flag is not provided", func() {
 			It("returns an error", func() {
 				command := commands.NewUploadProduct(multipart, metadataExtractor, fakeService, logger)
-				err := executeCommand(command, []string{}, nil)
+				err := executeCommand(command, []string{})
 				Expect(err.Error()).To(MatchRegexp("the required flag.*--product"))
 			})
 		})
@@ -365,7 +365,7 @@ product: will-be-overridden-by-command-line
 			It("returns an error", func() {
 				metadataExtractor.ExtractMetadataReturns(extractor.Metadata{}, errors.New("some error"))
 				command := commands.NewUploadProduct(multipart, metadataExtractor, fakeService, logger)
-				err := executeCommand(command, []string{"--product", "/some/path"}, nil)
+				err := executeCommand(command, []string{"--product", "/some/path"})
 				Expect(err).To(MatchError("failed to extract product metadata: some error"))
 			})
 		})
@@ -374,7 +374,7 @@ product: will-be-overridden-by-command-line
 			It("returns an error", func() {
 				fakeService.CheckProductAvailabilityReturns(true, errors.New("some error"))
 				command := commands.NewUploadProduct(multipart, metadataExtractor, fakeService, logger)
-				err := executeCommand(command, []string{"--product", "/some/path"}, nil)
+				err := executeCommand(command, []string{"--product", "/some/path"})
 				Expect(err).To(MatchError("failed to check product availability: some error"))
 			})
 		})
@@ -384,7 +384,7 @@ product: will-be-overridden-by-command-line
 				command := commands.NewUploadProduct(multipart, metadataExtractor, fakeService, logger)
 				multipart.AddFileReturns(errors.New("bad file"))
 
-				err := executeCommand(command, []string{"--product", "/some/path"}, nil)
+				err := executeCommand(command, []string{"--product", "/some/path"})
 				Expect(err).To(MatchError("failed to load product: bad file"))
 			})
 		})
@@ -394,7 +394,7 @@ product: will-be-overridden-by-command-line
 				command := commands.NewUploadProduct(multipart, metadataExtractor, fakeService, logger)
 				fakeService.UploadAvailableProductReturns(api.UploadAvailableProductOutput{}, errors.New("some product error"))
 
-				err := executeCommand(command, []string{"--product", "/some/path"}, nil)
+				err := executeCommand(command, []string{"--product", "/some/path"})
 				Expect(err).To(MatchError("failed to upload product: some product error"))
 			})
 		})

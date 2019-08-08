@@ -55,7 +55,7 @@ var _ = Describe("Certificate Authority", func() {
 		It("requests CAs from the server and prints to a table", func() {
 			err := executeCommand(certificateAuthority, []string{
 				"--id", "other-guid",
-			}, nil)
+			})
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(fakeCertificateAuthoritiesService.ListCertificateAuthoritiesCallCount()).To(Equal(1))
@@ -78,7 +78,7 @@ var _ = Describe("Certificate Authority", func() {
 				err := executeCommand(certificateAuthority, []string{
 					"--id", "other-guid",
 					"--cert-pem",
-				}, nil)
+				})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(fakePresenter.PresentCertificateAuthorityCallCount()).To(Equal(0))
 				Expect(fakeLogger.PrintlnCallCount()).To(Equal(1))
@@ -92,7 +92,7 @@ var _ = Describe("Certificate Authority", func() {
 				err := executeCommand(certificateAuthority, []string{
 					"--id", "other-guid",
 					"--format", "json",
-				}, nil)
+				})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(fakePresenter.SetFormatCallCount()).To(Equal(1))
 				Expect(fakePresenter.SetFormatArgsForCall(0)).To(Equal("json"))
@@ -105,7 +105,7 @@ var _ = Describe("Certificate Authority", func() {
 				It("returns an error", func() {
 					err := executeCommand(certificateAuthority, []string{
 						"--bogus", "nothing",
-					}, nil)
+					})
 					Expect(err).To(MatchError(
 						"unknown flag `bogus'",
 					))
@@ -123,14 +123,14 @@ var _ = Describe("Certificate Authority", func() {
 				It("returns an error", func() {
 					err := executeCommand(certificateAuthority, []string{
 						"--id", "some-guid",
-					}, nil)
+					})
 					Expect(err).To(MatchError("service failed"))
 				})
 			})
 
 			Context("when the --id flag is missing", func() {
 				It("returns an error", func() {
-					err := executeCommand(certificateAuthority, []string{}, nil)
+					err := executeCommand(certificateAuthority, []string{})
 					Expect(err).To(MatchError("the required flag `--id' was not specified"))
 				})
 			})
@@ -139,7 +139,7 @@ var _ = Describe("Certificate Authority", func() {
 				It("returns an error", func() {
 					err := executeCommand(certificateAuthority, []string{
 						"--id", "doesnt-exist",
-					}, nil)
+					})
 					Expect(err).To(MatchError(`could not find a certificate authority with ID: "doesnt-exist"`))
 				})
 			})

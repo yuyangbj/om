@@ -125,7 +125,7 @@ var _ = Describe("StagedDirectorConfig", func() {
 
 		It("writes a complete config file with filtered sensitive fields to stdout", func() {
 			command := commands.NewStagedDirectorConfig(fakeService, logger)
-			err := executeCommand(command, []string{}, nil)
+			err := executeCommand(command, []string{})
 			Expect(err).NotTo(HaveOccurred())
 
 			output := logger.PrintlnArgsForCall(0)
@@ -176,7 +176,7 @@ vmtypes-configuration: {}
 			}, nil)
 
 			command := commands.NewStagedDirectorConfig(fakeService, logger)
-			err := executeCommand(command, []string{}, nil)
+			err := executeCommand(command, []string{})
 			Expect(err).NotTo(HaveOccurred())
 
 			output := logger.PrintlnArgsForCall(0)
@@ -232,7 +232,7 @@ vmtypes-configuration:
 
 		It("doesn't redact values when --no-redact is passed", func() {
 			command := commands.NewStagedDirectorConfig(fakeService, logger)
-			err := executeCommand(command, []string{"--no-redact"}, nil)
+			err := executeCommand(command, []string{"--no-redact"})
 			Expect(err).NotTo(HaveOccurred())
 
 			invocations := fakeService.Invocations()["GetStagedDirectorProperties"]
@@ -243,7 +243,7 @@ vmtypes-configuration:
 			It("doesn't return the az in the config", func() {
 				fakeService.GetStagedDirectorAvailabilityZonesReturns(api.AvailabilityZonesOutput{}, nil)
 				command := commands.NewStagedDirectorConfig(fakeService, logger)
-				err := executeCommand(command, []string{}, nil)
+				err := executeCommand(command, []string{})
 				Expect(err).NotTo(HaveOccurred())
 
 				output := logger.PrintlnArgsForCall(0)
@@ -301,7 +301,7 @@ vmtypes-configuration: {}
 			command := commands.NewStagedDirectorConfig(fakeService, logger)
 			err := executeCommand(command, []string{
 				"--no-redact",
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			output := logger.PrintlnArgsForCall(0)
@@ -382,7 +382,7 @@ vmtypes-configuration: {}
 			command := commands.NewStagedDirectorConfig(fakeService, logger)
 			err := executeCommand(command, []string{
 				"--no-redact",
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			output := logger.PrintlnArgsForCall(0)
@@ -437,7 +437,7 @@ vmtypes-configuration: {}
 				command := commands.NewStagedDirectorConfig(fakeService, logger)
 				err := executeCommand(command, []string{
 					"--no-redact",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				output := logger.PrintlnArgsForCall(0)
@@ -504,7 +504,7 @@ vmtypes-configuration: {}
 				command := commands.NewStagedDirectorConfig(fakeService, logger)
 				err := executeCommand(command, []string{
 					"--no-redact",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				output := logger.PrintlnArgsForCall(0)
@@ -563,7 +563,7 @@ vmtypes-configuration: {}
 				command := commands.NewStagedDirectorConfig(fakeService, logger)
 				err := executeCommand(command, []string{
 					"--include-placeholders",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				output := logger.PrintlnArgsForCall(0)
@@ -635,7 +635,7 @@ vmtypes-configuration: {}
 				command := commands.NewStagedDirectorConfig(fakeService, logger)
 				err := executeCommand(command, []string{
 					"--include-placeholders",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				output := logger.PrintlnArgsForCall(0)
@@ -704,7 +704,7 @@ vmtypes-configuration: {}
 				command := commands.NewStagedDirectorConfig(fakeService, logger)
 				err := executeCommand(command, []string{
 					"--include-placeholders",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				output := logger.PrintlnArgsForCall(0)
@@ -766,7 +766,7 @@ vmtypes-configuration: {}
 				command := commands.NewStagedDirectorConfig(fakeService, logger)
 				err := executeCommand(command, []string{
 					"--include-placeholders",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				output := logger.PrintlnArgsForCall(0)
@@ -836,7 +836,7 @@ vmtypes-configuration: {}
 				command := commands.NewStagedDirectorConfig(fakeService, logger)
 				err := executeCommand(command, []string{
 					"--include-placeholders",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				output := logger.PrintlnArgsForCall(0)
@@ -894,7 +894,7 @@ vmtypes-configuration: {}
 				command := commands.NewStagedDirectorConfig(fakeService, logger)
 				err := executeCommand(command, []string{
 					"--include-placeholders",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				output := logger.PrintlnArgsForCall(0)
@@ -939,7 +939,7 @@ vmtypes-configuration: {}
 			When("an unknown flag is provided", func() {
 				It("returns an error", func() {
 					command := commands.NewStagedDirectorConfig(fakeService, logger)
-					err := executeCommand(command, []string{"--badflag"}, nil)
+					err := executeCommand(command, []string{"--badflag"})
 					Expect(err).To(MatchError("unknown flag `badflag'"))
 				})
 			})
@@ -951,7 +951,7 @@ vmtypes-configuration: {}
 
 				It("returns an error", func() {
 					command := commands.NewStagedDirectorConfig(fakeService, logger)
-					err := executeCommand(command, []string{}, nil)
+					err := executeCommand(command, []string{})
 					Expect(err).To(MatchError("some-error"))
 				})
 			})
@@ -963,7 +963,7 @@ vmtypes-configuration: {}
 
 				It("returns an error", func() {
 					command := commands.NewStagedDirectorConfig(fakeService, logger)
-					err := executeCommand(command, []string{}, nil)
+					err := executeCommand(command, []string{})
 					Expect(err).To(MatchError("some-error"))
 				})
 			})
@@ -975,7 +975,7 @@ vmtypes-configuration: {}
 
 				It("returns an error", func() {
 					command := commands.NewStagedDirectorConfig(fakeService, logger)
-					err := executeCommand(command, []string{}, nil)
+					err := executeCommand(command, []string{})
 					Expect(err).To(MatchError("some-error"))
 				})
 			})
@@ -987,7 +987,7 @@ vmtypes-configuration: {}
 
 				It("returns an error", func() {
 					command := commands.NewStagedDirectorConfig(fakeService, logger)
-					err := executeCommand(command, []string{}, nil)
+					err := executeCommand(command, []string{})
 					Expect(err).To(MatchError("some-error"))
 				})
 			})
@@ -999,7 +999,7 @@ vmtypes-configuration: {}
 
 				It("returns an error", func() {
 					command := commands.NewStagedDirectorConfig(fakeService, logger)
-					err := executeCommand(command, []string{}, nil)
+					err := executeCommand(command, []string{})
 					Expect(err).To(MatchError("some-error"))
 				})
 			})
@@ -1011,7 +1011,7 @@ vmtypes-configuration: {}
 
 				It("returns an error", func() {
 					command := commands.NewStagedDirectorConfig(fakeService, logger)
-					err := executeCommand(command, []string{}, nil)
+					err := executeCommand(command, []string{})
 					Expect(err).To(MatchError("some-error"))
 				})
 			})
@@ -1026,7 +1026,7 @@ vmtypes-configuration: {}
 
 				It("returns an error", func() {
 					command := commands.NewStagedDirectorConfig(fakeService, logger)
-					err := executeCommand(command, []string{}, nil)
+					err := executeCommand(command, []string{})
 					Expect(err).To(MatchError("some-error"))
 				})
 			})

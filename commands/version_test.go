@@ -22,7 +22,7 @@ var _ = Describe("Version", func() {
 			output := bytes.NewBuffer([]byte{})
 			version := commands.NewVersion("v1.2.3", output)
 
-			err := executeCommand(version, []string{}, nil)
+			err := executeCommand(version, []string{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(output).To(ContainSubstring("v1.2.3\n"))
@@ -34,7 +34,7 @@ var _ = Describe("Version", func() {
 
 					version := commands.NewVersion("v1.2.3", badWriter{})
 
-					err := executeCommand(version, []string{}, nil)
+					err := executeCommand(version, []string{})
 					Expect(err).To(MatchError("could not print version: failed to write"))
 				})
 			})

@@ -28,7 +28,7 @@ var _ = Describe("GenerateCertificate", func() {
 		It("makes a request to the Opsman to generate a certificate from the given domains", func() {
 			err := executeCommand(command, []string{
 				"--domains", "*.apps.example.com, *.sys.example.com",
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.GenerateCertificateCallCount()).To(Equal(1))
@@ -39,7 +39,7 @@ var _ = Describe("GenerateCertificate", func() {
 
 			err := executeCommand(command, []string{
 				"--domains", "*.apps.example.com, *.sys.example.com",
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeLogger.PrintfCallCount()).To(Equal(1))
@@ -50,7 +50,7 @@ var _ = Describe("GenerateCertificate", func() {
 		Context("failure cases", func() {
 			Context("when the domains flag is missing", func() {
 				It("returns an error", func() {
-					err := executeCommand(command, []string{}, nil)
+					err := executeCommand(command, []string{})
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--domains"))
 				})
 			})
@@ -60,7 +60,7 @@ var _ = Describe("GenerateCertificate", func() {
 
 				err := executeCommand(command, []string{
 					"--domains", "*.apps.example.com, *.sys.example.com",
-				}, nil)
+				})
 				Expect(err).To(MatchError("failed to generate certificate"))
 			})
 		})

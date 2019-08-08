@@ -72,7 +72,7 @@ var _ = Describe("DownloadProduct", func() {
 					"--output-directory", tempDir,
 				}
 
-				err = executeCommand(command, commandArgs, nil)
+				err = executeCommand(command, commandArgs)
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
@@ -100,7 +100,7 @@ var _ = Describe("DownloadProduct", func() {
 					"--output-directory", tempDir,
 				}
 
-				err = executeCommand(command, commandArgs, nil)
+				err = executeCommand(command, commandArgs)
 				Expect(err).NotTo(HaveOccurred())
 
 				slug := fakeProductDownloader.GetAllProductVersionsArgsForCall(0)
@@ -138,7 +138,7 @@ var _ = Describe("DownloadProduct", func() {
 						"--output-directory", tempDir,
 					}
 
-					err = executeCommand(command, commandArgs, nil)
+					err = executeCommand(command, commandArgs)
 					Expect(err).NotTo(HaveOccurred())
 
 					Eventually(buffer).Should(gbytes.Say("warning: could not parse semver version from: 2.0.x"))
@@ -165,7 +165,7 @@ var _ = Describe("DownloadProduct", func() {
 						"--output-directory", tempDir,
 					}
 
-					err = executeCommand(command, commandArgs, nil)
+					err = executeCommand(command, commandArgs)
 					Expect(err).To(MatchError("no valid versions found for product 'elastic-runtime' and product version regex '2\\..\\..*'\nexisting versions: 3.1.2"))
 				})
 			})
@@ -196,7 +196,7 @@ var _ = Describe("DownloadProduct", func() {
 						"--output-directory", tempDir,
 					}
 
-					err = executeCommand(command, commandArgs, nil)
+					err = executeCommand(command, commandArgs)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(filepath.Join(tempDir, "cf-2.0-build.1.pivotal")).To(BeAnExistingFile())
 				})
@@ -226,7 +226,7 @@ var _ = Describe("DownloadProduct", func() {
 						"--output-directory", tempDir,
 					}
 
-					err = executeCommand(command, commandArgs, nil)
+					err = executeCommand(command, commandArgs)
 					Expect(err).To(HaveOccurred())
 					Expect(filepath.Join(tempDir, "cf-2.0-build.1.pivotal")).ToNot(BeAnExistingFile())
 				})
@@ -267,7 +267,7 @@ var _ = Describe("DownloadProduct", func() {
 					"--stemcell-iaas", "google",
 				}
 
-				err = executeCommand(command, commandArgs, nil)
+				err = executeCommand(command, commandArgs)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeProductDownloader.GetLatestStemcellForProductCallCount()).To(Equal(1))
@@ -322,7 +322,7 @@ var _ = Describe("DownloadProduct", func() {
 						"--product-version", "2.0.0",
 						"--output-directory", tempDir,
 						"--stemcell-iaas", "google",
-					}, nil)
+					})
 
 					Expect(err).NotTo(HaveOccurred())
 
@@ -396,7 +396,7 @@ var _ = Describe("DownloadProduct", func() {
 						"--pivnet-product-slug", "elastic-runtime",
 						"--product-version", "2.0.0",
 						"--output-directory", tempDir,
-					}, nil)
+					})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakeProductDownloader.DownloadProductToFileCallCount()).To(Equal(0))
 					Expect(buffer).Should(gbytes.Say("already exists, skip downloading"))
@@ -410,7 +410,7 @@ var _ = Describe("DownloadProduct", func() {
 						"--product-version", "2.0.0",
 						"--stemcell-iaas", "google",
 						"--output-directory", tempDir,
-					}, nil)
+					})
 					Expect(err).ToNot(HaveOccurred())
 				})
 			})
@@ -426,7 +426,7 @@ var _ = Describe("DownloadProduct", func() {
 						"--pivnet-product-slug", "elastic-runtime",
 						"--product-version", "2.0.0",
 						"--output-directory", tempDir,
-					}, nil)
+					})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakeProductDownloader.DownloadProductToFileCallCount()).To(Equal(0))
 					Expect(buffer).Should(gbytes.Say("already exists, skip downloading"))
@@ -444,7 +444,7 @@ var _ = Describe("DownloadProduct", func() {
 						"--pivnet-product-slug", "elastic-runtime",
 						"--product-version", "2.0.0",
 						"--output-directory", tempDir,
-					}, nil)
+					})
 					Expect(err).ToNot(HaveOccurred())
 				})
 			})
@@ -492,7 +492,7 @@ output-directory: %s
 				It("returns an error if missing variables", func() {
 					err = executeCommand(command, []string{
 						"--config", configFile.Name(),
-					}, nil)
+					})
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("Expected to find variables"))
 				})
@@ -520,7 +520,7 @@ output-directory: %s
 						err = executeCommand(command, []string{
 							"--config", configFile.Name(),
 							"--vars-file", varsFile.Name(),
-						}, nil)
+						})
 						Expect(err).NotTo(HaveOccurred())
 					})
 				})
@@ -530,23 +530,19 @@ output-directory: %s
 						err = executeCommand(command, []string{
 							"--config", configFile.Name(),
 							"--var", "product-slug=elastic-runtime",
-						}, nil)
+						})
 						Expect(err).NotTo(HaveOccurred())
 					})
 				})
 
 				Context("passed as environment variables", func() {
-					BeforeEach(func() {
-						environFunc = func() []string {
-							return []string{"OM_VAR_product-slug='sea-slug'"}
-						}
-					})
-
 					It("can interpolate variables into the configuration", func() {
+						Expect(os.Setenv("OM_VAR_product-slug", "sea-slug")).NotTo(HaveOccurred())
+						defer os.Unsetenv("OM_VAR_product-slug")
 						err = executeCommand(command, []string{
 							"--config", configFile.Name(),
 							"--vars-env", "OM_VAR",
-						}, environFunc)
+						})
 						Expect(err).NotTo(HaveOccurred())
 					})
 				})
@@ -572,7 +568,7 @@ output-directory: %s
 						"--product-version", `2.0.0`,
 						"--output-directory", tempDir,
 						"--s3-bucket", "there once was a man from a",
-					}, nil)
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					prefixedFileName := path.Join(tempDir, "[mayhem-crew,2.0.0]my-great-product.pivotal")
@@ -590,7 +586,7 @@ output-directory: %s
 						"--product-version", `2.0.0`,
 						"--output-directory", tempDir,
 						"--s3-bucket", "there once was a man from a",
-					}, nil)
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					downloadReportFileName := path.Join(tempDir, "download-file.json")
@@ -618,7 +614,7 @@ output-directory: %s
 						"--pivnet-product-slug", "mayhem-crew",
 						"--product-version", `2.0.0`,
 						"--output-directory", tempDir,
-					}, nil)
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					unPrefixedFileName := path.Join(tempDir, "my-great-product.pivotal")
@@ -635,7 +631,7 @@ output-directory: %s
 						"--pivnet-product-slug", "mayhem-crew",
 						"--product-version", `2.0.0`,
 						"--output-directory", tempDir,
-					}, nil)
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					downloadReportFileName := path.Join(tempDir, "download-file.json")
@@ -653,14 +649,14 @@ output-directory: %s
 	Context("failure cases", func() {
 		Context("when an unknown flag is provided", func() {
 			It("returns an error", func() {
-				err = executeCommand(command, []string{"--badflag"}, nil)
+				err = executeCommand(command, []string{"--badflag"})
 				Expect(err).To(MatchError("unknown flag `badflag'"))
 			})
 		})
 
 		Context("when a required flag is not provided", func() {
 			It("returns an error", func() {
-				err = executeCommand(command, []string{}, nil)
+				err = executeCommand(command, []string{})
 				Expect(err.Error()).To(MatchRegexp("the required flag.*--output-directory"))
 			})
 		})
@@ -675,7 +671,7 @@ output-directory: %s
 					"--pivnet-product-slug", "mayhem-crew",
 					"--product-version", `2.0.0`,
 					"--output-directory", tempDir,
-				}, nil)
+				})
 				Expect(err).To(MatchError("the required flag `--pivnet-api-token' was not specified"))
 			})
 		})
@@ -692,7 +688,7 @@ output-directory: %s
 					"--product-version", "2.0.0",
 					"--product-version-regex", ".*",
 					"--output-directory", tempDir,
-				}, nil)
+				})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("cannot use both --product-version and --product-version-regex; please choose one or the other"))
 			})
@@ -708,7 +704,7 @@ output-directory: %s
 					"--pivnet-file-glob", "*.pivotal",
 					"--pivnet-product-slug", "elastic-runtime",
 					"--output-directory", tempDir,
-				}, nil)
+				})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("no version information provided; please provide either --product-version or --product-version-regex"))
 			})
@@ -729,7 +725,7 @@ output-directory: %s
 					"--pivnet-product-slug", "elastic-runtime",
 					"--product-version", "2.0.0",
 					"--output-directory", tempDir,
-				}, nil)
+				})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("could not download product: some-error"))
 			})

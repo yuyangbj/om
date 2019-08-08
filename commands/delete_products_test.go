@@ -24,7 +24,7 @@ var _ = Describe("DeleteProduct", func() {
 
 	Describe("Execute", func() {
 		It("deletes the specific product", func() {
-			err := executeCommand(command, []string{"-p", "some-product-name", "-v", "1.2.3-build.4"}, nil)
+			err := executeCommand(command, []string{"-p", "some-product-name", "-v", "1.2.3-build.4"})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.DeleteAvailableProductsCallCount()).To(Equal(1))
@@ -42,7 +42,7 @@ var _ = Describe("DeleteProduct", func() {
 				It("returns an error", func() {
 					fakeService.DeleteAvailableProductsReturns(errors.New("something bad happened"))
 
-					err := executeCommand(command, []string{"-p", "nah", "-v", "nope"}, nil)
+					err := executeCommand(command, []string{"-p", "nah", "-v", "nope"})
 					Expect(err).To(MatchError("something bad happened"))
 				})
 			})
@@ -51,7 +51,7 @@ var _ = Describe("DeleteProduct", func() {
 				It("returns an error", func() {
 					err := executeCommand(command, []string{
 						"--product-version", "1.2.3",
-					}, nil)
+					})
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--product-name"))
 				})
 			})
@@ -60,7 +60,7 @@ var _ = Describe("DeleteProduct", func() {
 				It("returns an error", func() {
 					err := executeCommand(command, []string{
 						"--product-name", "some-product",
-					}, nil)
+					})
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--product-version"))
 				})
 			})

@@ -27,7 +27,7 @@ var _ = Describe("ActivateCertificateAuthority", func() {
 		It("activates the specified certificate authority", func() {
 			err := executeCommand(command, []string{
 				"--id", "some-certificate-authority-id",
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.ActivateCertificateAuthorityCallCount()).To(Equal(1))
@@ -47,21 +47,21 @@ var _ = Describe("ActivateCertificateAuthority", func() {
 
 					err := executeCommand(command, []string{
 						"--id", "some-certificate-authority-id",
-					}, nil)
+					})
 					Expect(err).To(MatchError("failed to activate certificate"))
 				})
 			})
 
 			Context("when an unknown flag is provided", func() {
 				It("returns an error", func() {
-					err := executeCommand(command, []string{"--badflag"}, nil)
+					err := executeCommand(command, []string{"--badflag"})
 					Expect(err).To(MatchError("unknown flag `badflag'"))
 				})
 			})
 
 			Context("when the id flag is not provided", func() {
 				It("returns an error", func() {
-					err := executeCommand(command, []string{}, nil)
+					err := executeCommand(command, []string{})
 					Expect(err).To(MatchError("the required flag `--id' was not specified"))
 				})
 			})

@@ -82,7 +82,7 @@ var _ = Describe("Interpolate", func() {
 				Expect(err).NotTo(HaveOccurred())
 				err = executeCommand(command, []string{
 					"--config", inputFile,
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				content := logger.PrintlnArgsForCall(0)
@@ -94,7 +94,7 @@ var _ = Describe("Interpolate", func() {
 				Expect(err).NotTo(HaveOccurred())
 				err = executeCommand(command, []string{
 					"--config", inputFile,
-				}, nil)
+				})
 				Expect(err).To(HaveOccurred())
 				splitErr := strings.Split(err.Error(), "\n")
 				Expect(splitErr).To(ConsistOf("Expected to find variables:", "hello"))
@@ -110,7 +110,7 @@ var _ = Describe("Interpolate", func() {
 				err = executeCommand(command, []string{
 					"--config", inputFile,
 					"--vars-file", varsFile,
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				content := logger.PrintlnArgsForCall(0)
@@ -128,7 +128,7 @@ var _ = Describe("Interpolate", func() {
 					"--config", inputFile,
 					"--vars-file", varsFile,
 					"--vars-file", varsFile2,
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				content := logger.PrintlnArgsForCall(0)
@@ -143,7 +143,7 @@ var _ = Describe("Interpolate", func() {
 				err = executeCommand(command, []string{
 					"--config", inputFile,
 					"--var", "hello=world",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				content := logger.PrintlnArgsForCall(0)
@@ -157,7 +157,7 @@ var _ = Describe("Interpolate", func() {
 					"--config", inputFile,
 					"--var", "hello=world",
 					"--var", "world=hello",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				content := logger.PrintlnArgsForCall(0)
@@ -172,7 +172,7 @@ var _ = Describe("Interpolate", func() {
 					"--var", "hello=world",
 					"--var", "world=hello",
 					"--var", "hello=otherWorld",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				content := logger.PrintlnArgsForCall(0)
@@ -189,7 +189,7 @@ var _ = Describe("Interpolate", func() {
 				err = executeCommand(command, []string{
 					"--config", inputFile,
 					"--ops-file", opsFile,
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				content := logger.PrintlnArgsForCall(0)
@@ -208,7 +208,7 @@ hello: world`))
 					"--config", inputFile,
 					"--vars-file", varsFile,
 					"--path", "/a",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				content := logger.PrintlnArgsForCall(0)
@@ -224,7 +224,7 @@ hello: world`))
 					err = executeCommand(command, []string{
 						"--config", inputFile,
 						"--skip-missing",
-					}, nil)
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					content := logger.PrintlnArgsForCall(0)
@@ -235,7 +235,7 @@ hello: world`))
 
 		When("no flags are set and no stdin provided", func() {
 			It("errors", func() {
-				err := executeCommand(command, []string{}, nil)
+				err := executeCommand(command, []string{})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("no file or STDIN input provided."))
 			})

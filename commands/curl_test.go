@@ -56,7 +56,7 @@ var _ = Describe("Curl", func() {
 				"--path", "/api/v0/some/path",
 				"--request", "POST",
 				"--data", `{"some-key": "some-value"}`,
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			input := fakeService.CurlArgsForCall(0)
@@ -91,7 +91,7 @@ var _ = Describe("Curl", func() {
 					"--path", "/api/v0/some/path",
 					"--request", "GET",
 					"--silent",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(stderr.Invocations()).To(BeEmpty())
@@ -110,7 +110,7 @@ var _ = Describe("Curl", func() {
 					"--path", "/api/v0/some/path",
 					"--request", "POST",
 					"--silent",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(stderr.Invocations()).To(HaveLen(0))
@@ -129,7 +129,7 @@ var _ = Describe("Curl", func() {
 					"--path", "/api/v0/some/path",
 					"--request", "GET",
 					"--silent",
-				}, nil)
+				})
 				Expect(err).To(MatchError("server responded with an error"))
 
 				format, content := stderr.PrintfArgsForCall(0)
@@ -156,7 +156,7 @@ var _ = Describe("Curl", func() {
 					"--request", "POST",
 					"--data", `some_key=some_value`,
 					"--header", "Content-Type: application/x-www-form-urlencoded",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				input := fakeService.CurlArgsForCall(0)
@@ -181,7 +181,7 @@ var _ = Describe("Curl", func() {
 						"--path", "/api/v0/some/path",
 						"--request", "POST",
 						"--data", `{"some-key": "some-value"}`,
-					}, nil)
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					content := stdout.PrintlnArgsForCall(0)
@@ -203,7 +203,7 @@ var _ = Describe("Curl", func() {
 						"--path", "/api/v0/some/path",
 						"--request", "POST",
 						"--data", `{"some-key": "some-value"}`,
-					}, nil)
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					content := stdout.PrintlnArgsForCall(0)
@@ -215,7 +215,7 @@ var _ = Describe("Curl", func() {
 		Context("failure cases", func() {
 			Context("when the flags cannot be parsed", func() {
 				It("returns an error", func() {
-					err := executeCommand(command, []string{"--bad-flag", "some-value"}, nil)
+					err := executeCommand(command, []string{"--bad-flag", "some-value"})
 					Expect(err).To(MatchError("unknown flag `bad-flag'"))
 				})
 			})
@@ -225,7 +225,7 @@ var _ = Describe("Curl", func() {
 					err := executeCommand(command, []string{
 						"--request", "GET",
 						"--data", `{"some-key": "some-value"}`,
-					}, nil)
+					})
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--path"))
 				})
 			})
@@ -237,7 +237,7 @@ var _ = Describe("Curl", func() {
 						"--path", "/api/v0/some/path",
 						"--request", "POST",
 						"--data", `{"some-key": "some-value"}`,
-					}, nil)
+					})
 					Expect(err).To(MatchError("failed to make api request: some request error"))
 				})
 			})
@@ -251,7 +251,7 @@ var _ = Describe("Curl", func() {
 						"--path", "/api/v0/some/path",
 						"--request", "POST",
 						"--data", `{"some-key": "some-value"}`,
-					}, nil)
+					})
 					Expect(err).To(MatchError("failed to read api response body: failed to read"))
 				})
 			})
@@ -267,7 +267,7 @@ var _ = Describe("Curl", func() {
 						"--path", "/api/v0/some/path",
 						"--request", "POST",
 						"--data", `{"some-key": "some-value"}`,
-					}, nil)
+					})
 					Expect(err).To(MatchError("server responded with an error"))
 				})
 			})

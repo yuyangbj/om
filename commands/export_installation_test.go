@@ -27,7 +27,7 @@ var _ = Describe("ExportInstallation", func() {
 
 		err := executeCommand(command, []string{
 			"--output-file", "/path/to/output.zip",
-		}, nil)
+		})
 		Expect(err).NotTo(HaveOccurred())
 
 		By("calling export on the installation service")
@@ -48,7 +48,7 @@ var _ = Describe("ExportInstallation", func() {
 		Context("when an unknown flag is provided", func() {
 			It("returns an error", func() {
 				command := commands.NewExportInstallation(fakeService, logger)
-				err := executeCommand(command, []string{"--badflag"}, nil)
+				err := executeCommand(command, []string{"--badflag"})
 				Expect(err).To(MatchError("unknown flag `badflag'"))
 			})
 		})
@@ -56,7 +56,7 @@ var _ = Describe("ExportInstallation", func() {
 		Context("when output file is not provided", func() {
 			It("returns an error and prints out usage", func() {
 				command := commands.NewExportInstallation(fakeService, logger)
-				err := executeCommand(command, []string{}, nil)
+				err := executeCommand(command, []string{})
 				Expect(err.Error()).To(MatchRegexp("the required flag.*--output-file"))
 			})
 		})
@@ -66,7 +66,7 @@ var _ = Describe("ExportInstallation", func() {
 				command := commands.NewExportInstallation(fakeService, logger)
 				fakeService.DownloadInstallationAssetCollectionReturns(errors.New("some error"))
 
-				err := executeCommand(command, []string{"--output-file", "/some/path"}, nil)
+				err := executeCommand(command, []string{"--output-file", "/some/path"})
 				Expect(err).To(MatchError("failed to export installation: some error"))
 			})
 		})

@@ -29,7 +29,7 @@ var _ = Describe("CreateCertificateAuthority", func() {
 			err := executeCommand(command, []string{
 				"--certificate-pem", "some CertPem",
 				"--private-key-pem", "some PrivateKey",
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.CreateCertificateAuthorityCallCount()).To(Equal(1))
@@ -54,7 +54,7 @@ var _ = Describe("CreateCertificateAuthority", func() {
 			err := executeCommand(command, []string{
 				"--certificate-pem", "some CertPem",
 				"--private-key-pem", "some PrivateKey",
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakePresenter.PresentCertificateAuthorityCallCount()).To(Equal(1))
@@ -67,7 +67,7 @@ var _ = Describe("CreateCertificateAuthority", func() {
 					"--format", "json",
 					"--certificate-pem", "some CertPem",
 					"--private-key-pem", "some PrivateKey",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakePresenter.SetFormatCallCount()).To(Equal(1))
@@ -83,14 +83,14 @@ var _ = Describe("CreateCertificateAuthority", func() {
 					err := executeCommand(command, []string{
 						"--certificate-pem", "some CertPem",
 						"--private-key-pem", "some PrivateKey",
-					}, nil)
+					})
 					Expect(err).To(MatchError("failed to create certificate"))
 				})
 			})
 
 			Context("when an unknown flag is provided", func() {
 				It("returns an error", func() {
-					err := executeCommand(command, []string{"--badflag"}, nil)
+					err := executeCommand(command, []string{"--badflag"})
 					Expect(err).To(MatchError("unknown flag `badflag'"))
 				})
 			})
@@ -99,7 +99,7 @@ var _ = Describe("CreateCertificateAuthority", func() {
 				It("returns an error", func() {
 					err := executeCommand(command, []string{
 						"--private-key-pem", "some PrivateKey",
-					}, nil)
+					})
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--certificate-pem"))
 				})
 			})
@@ -108,7 +108,7 @@ var _ = Describe("CreateCertificateAuthority", func() {
 				It("returns an error", func() {
 					err := executeCommand(command, []string{
 						"--certificate-pem", "some CertPem",
-					}, nil)
+					})
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--private-key-pem"))
 				})
 			})

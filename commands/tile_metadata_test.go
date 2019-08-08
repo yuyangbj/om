@@ -61,7 +61,7 @@ product_version: 1.2.3
 				"-p",
 				productFile.Name(),
 				"--product-name",
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			content := stdout.PrintlnArgsForCall(0)
@@ -73,7 +73,7 @@ product_version: 1.2.3
 				"-p",
 				productFile.Name(),
 				"--product-version",
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			content := stdout.PrintlnArgsForCall(0)
@@ -83,21 +83,21 @@ product_version: 1.2.3
 		Context("failure cases", func() {
 			Context("when the flags cannot be parsed", func() {
 				It("returns an error", func() {
-					err = executeCommand(command, []string{"--bad-flag", "some-value"}, nil)
+					err = executeCommand(command, []string{"--bad-flag", "some-value"})
 					Expect(err).To(MatchError(MatchRegexp("could not parse tile-metadata flags")))
 				})
 			})
 
 			Context("when the flags are not specified", func() {
 				It("returns an error", func() {
-					err = executeCommand(command, []string{"-p", productFile.Name()}, nil)
+					err = executeCommand(command, []string{"-p", productFile.Name()})
 					Expect(err).To(MatchError(MatchRegexp("you must specify product-name and/or product-version")))
 				})
 			})
 
 			Context("when the specified product file is not found", func() {
 				It("returns an error", func() {
-					err = executeCommand(command, []string{"-p", "non-existent-file", "--product-name"}, nil)
+					err = executeCommand(command, []string{"-p", "non-existent-file", "--product-name"})
 					Expect(err).To(MatchError(MatchRegexp("failed to open product file")))
 				})
 			})
@@ -119,7 +119,7 @@ product_version: 1.2.3
 				})
 
 				It("returns an error", func() {
-					err = executeCommand(command, []string{"-p", badTile.Name(), "--product-name"}, nil)
+					err = executeCommand(command, []string{"-p", badTile.Name(), "--product-name"})
 					Expect(err).To(MatchError(MatchRegexp("failed to find metadata file")))
 				})
 			})

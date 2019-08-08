@@ -53,7 +53,7 @@ var _ = Describe("Credentials", func() {
 				err := executeCommand(command, []string{
 					"--product-name", "some-product",
 					"--credential-reference", ".properties.some-credentials",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeService.GetDeployedProductCredentialCallCount()).To(Equal(1))
@@ -79,7 +79,7 @@ var _ = Describe("Credentials", func() {
 						"--product-name", "some-product",
 						"--credential-reference", "some-credential",
 						"--format", "json",
-					}, nil)
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(fakePresenter.SetFormatArgsForCall(0)).To(Equal("json"))
@@ -90,7 +90,7 @@ var _ = Describe("Credentials", func() {
 				It("returns an error", func() {
 					err := executeCommand(command, []string{
 						"--credential-reference", "some-credential",
-					}, nil)
+					})
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--product-name"))
 				})
 			})
@@ -101,7 +101,7 @@ var _ = Describe("Credentials", func() {
 
 					err := executeCommand(command, []string{
 						"--product-name", "some-product",
-					}, nil)
+					})
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--credential-reference"))
 				})
 			})
@@ -117,7 +117,7 @@ var _ = Describe("Credentials", func() {
 					err := executeCommand(command, []string{
 						"--product-name", "some-product",
 						"--credential-reference", "some-credential",
-					}, nil)
+					})
 					Expect(err).To(MatchError(ContainSubstring(`failed to fetch credential for "some-credential"`)))
 				})
 			})
@@ -131,7 +131,7 @@ var _ = Describe("Credentials", func() {
 					err := executeCommand(command, []string{
 						"--product-name", "some-product",
 						"--credential-reference", "some-credential",
-					}, nil)
+					})
 					Expect(err).To(MatchError(ContainSubstring(`failed to fetch credential for "some-credential": could not fetch credentials`)))
 
 					Expect(fakePresenter.PresentCredentialsCallCount()).To(Equal(0))
@@ -148,7 +148,7 @@ var _ = Describe("Credentials", func() {
 					err := executeCommand(command, []string{
 						"--product-name", "some-product",
 						"--credential-reference", "some-credential",
-					}, nil)
+					})
 					Expect(err).To(MatchError(ContainSubstring("failed to fetch credential: could not fetch deployed products")))
 
 					Expect(fakePresenter.PresentCredentialsCallCount()).To(Equal(0))
@@ -167,7 +167,7 @@ var _ = Describe("Credentials", func() {
 					err := executeCommand(command, []string{
 						"--product-name", "some-product",
 						"--credential-reference", "some-credential",
-					}, nil)
+					})
 					Expect(err).To(MatchError(ContainSubstring(`failed to fetch credential: "some-product" is not deployed`)))
 
 					Expect(fakePresenter.PresentCredentialsCallCount()).To(Equal(0))
@@ -195,7 +195,7 @@ var _ = Describe("Credentials", func() {
 					"--product-name", "some-product",
 					"--credential-reference", ".properties.some-credentials",
 					"--credential-field", "password",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(logger.PrintlnCallCount()).To(Equal(1))
 				Expect(logger.PrintlnArgsForCall(0)[0]).To(Equal("some-password"))
@@ -209,7 +209,7 @@ var _ = Describe("Credentials", func() {
 						"--product-name", "some-product",
 						"--credential-reference", "some-credential",
 						"--credential-field", "missing-field",
-					}, nil)
+					})
 					Expect(err).To(MatchError(ContainSubstring(`credential field "missing-field" not found`)))
 				})
 			})

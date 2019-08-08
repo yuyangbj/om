@@ -28,7 +28,7 @@ var _ = Describe("UnstageProduct", func() {
 
 		err := executeCommand(command, []string{
 			"--product-name", "some-product",
-		}, nil)
+		})
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(fakeService.DeleteStagedProductCallCount()).To(Equal(1))
@@ -48,7 +48,7 @@ var _ = Describe("UnstageProduct", func() {
 		Context("when an unknown flag is provided", func() {
 			It("returns an error", func() {
 				command := commands.NewUnstageProduct(fakeService, logger)
-				err := executeCommand(command, []string{"--badflag"}, nil)
+				err := executeCommand(command, []string{"--badflag"})
 				Expect(err).To(MatchError("unknown flag `badflag'"))
 			})
 		})
@@ -56,7 +56,7 @@ var _ = Describe("UnstageProduct", func() {
 		Context("when the product-name flag is not provided", func() {
 			It("returns an error", func() {
 				command := commands.NewUnstageProduct(fakeService, logger)
-				err := executeCommand(command, []string{}, nil)
+				err := executeCommand(command, []string{})
 				Expect(err.Error()).To(MatchRegexp("the required flag.*--product-name"))
 			})
 		})
@@ -66,7 +66,7 @@ var _ = Describe("UnstageProduct", func() {
 				command := commands.NewUnstageProduct(fakeService, logger)
 				fakeService.DeleteStagedProductReturns(errors.New("some product error"))
 
-				err := executeCommand(command, []string{"--product-name", "some-product"}, nil)
+				err := executeCommand(command, []string{"--product-name", "some-product"})
 				Expect(err).To(MatchError("failed to unstage product: some product error"))
 			})
 		})

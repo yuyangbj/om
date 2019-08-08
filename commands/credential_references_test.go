@@ -49,7 +49,7 @@ var _ = Describe("CredentialReferences", func() {
 		It("lists the credential references in alphabetical order", func() {
 			err := executeCommand(command, []string{
 				"--product-name", "some-product",
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakePresenter.PresentCredentialReferencesCallCount()).To(Equal(1))
@@ -65,7 +65,7 @@ var _ = Describe("CredentialReferences", func() {
 				err := executeCommand(command, []string{
 					"--product-name", "some-product",
 					"--format", "json",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakePresenter.SetFormatCallCount()).To(Equal(1))
@@ -77,7 +77,7 @@ var _ = Describe("CredentialReferences", func() {
 			Context("when an unknown flag is provided", func() {
 				It("returns an error", func() {
 					command := commands.NewCredentialReferences(fakeService, fakePresenter, logger)
-					err := executeCommand(command, []string{"--badflag"}, nil)
+					err := executeCommand(command, []string{"--badflag"})
 					Expect(err).To(MatchError("unknown flag `badflag'"))
 				})
 			})
@@ -85,7 +85,7 @@ var _ = Describe("CredentialReferences", func() {
 			Context("when the product-name flag is not provided", func() {
 				It("returns an error", func() {
 					command := commands.NewCredentialReferences(fakeService, fakePresenter, logger)
-					err := executeCommand(command, []string{}, nil)
+					err := executeCommand(command, []string{})
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--product-name"))
 				})
 			})
@@ -100,7 +100,7 @@ var _ = Describe("CredentialReferences", func() {
 
 					err := executeCommand(command, []string{
 						"--product-name", "some-product",
-					}, nil)
+					})
 					Expect(err).To(MatchError(ContainSubstring("failed to list credential references")))
 				})
 			})
@@ -113,7 +113,7 @@ var _ = Describe("CredentialReferences", func() {
 
 					err := executeCommand(command, []string{
 						"--product-name", "some-product",
-					}, nil)
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(fakePresenter.PresentCredentialReferencesCallCount()).To(Equal(0))
@@ -130,7 +130,7 @@ var _ = Describe("CredentialReferences", func() {
 
 					err := executeCommand(command, []string{
 						"--product-name", "some-product",
-					}, nil)
+					})
 					Expect(err).To(MatchError(ContainSubstring("failed to list credential references: could not fetch credential references")))
 
 					Expect(fakePresenter.PresentCredentialReferencesCallCount()).To(Equal(0))
@@ -146,7 +146,7 @@ var _ = Describe("CredentialReferences", func() {
 					command := commands.NewCredentialReferences(fakeService, fakePresenter, logger)
 					err := executeCommand(command, []string{
 						"--product-name", "some-product",
-					}, nil)
+					})
 					Expect(err).To(MatchError(ContainSubstring("failed to list credential references: could not fetch deployed products")))
 
 					Expect(fakePresenter.PresentCredentialReferencesCallCount()).To(Equal(0))

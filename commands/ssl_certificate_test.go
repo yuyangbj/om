@@ -40,7 +40,7 @@ var _ = Describe("SslCertificate", func() {
 		})
 
 		It("prints the certificate to a table", func() {
-			err := executeCommand(sslCertificate, []string{}, nil)
+			err := executeCommand(sslCertificate, []string{})
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(fakeSSLCertificateService.GetSSLCertificateCallCount()).To(Equal(1))
@@ -53,7 +53,7 @@ var _ = Describe("SslCertificate", func() {
 			It("calls the presenter to set the json format", func() {
 				err := executeCommand(sslCertificate, []string{
 					"--format", "json",
-				}, nil)
+				})
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakePresenter.SetFormatCallCount()).To(Equal(1))
@@ -63,7 +63,7 @@ var _ = Describe("SslCertificate", func() {
 
 		Context("when the flag cannot parsed", func() {
 			It("returns an error", func() {
-				err := executeCommand(sslCertificate, []string{"--bogus", "nothing"}, nil)
+				err := executeCommand(sslCertificate, []string{"--bogus", "nothing"})
 				Expect(err).To(MatchError(
 					"unknown flag `bogus'",
 				))
@@ -77,7 +77,7 @@ var _ = Describe("SslCertificate", func() {
 					fmt.Errorf("could not get custom certificate"),
 				)
 
-				err := executeCommand(sslCertificate, []string{}, nil)
+				err := executeCommand(sslCertificate, []string{})
 				Expect(err).To(MatchError("could not get custom certificate"))
 			})
 		})

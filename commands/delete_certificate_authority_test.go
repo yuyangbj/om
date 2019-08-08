@@ -28,7 +28,7 @@ var _ = Describe("DeleteCertificateAuthority", func() {
 		It("deletes the specified certificate authority", func() {
 			err := executeCommand(command, []string{
 				"--id", "some-certificate-authority-id",
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.DeleteCertificateAuthorityCallCount()).To(Equal(1))
@@ -48,19 +48,19 @@ var _ = Describe("DeleteCertificateAuthority", func() {
 
 					err := executeCommand(command, []string{
 						"--id", "some-certificate-authority-id",
-					}, nil)
+					})
 					Expect(err).To(MatchError("failed to delete certificate"))
 				})
 			})
 			Context("when an unknown flag is provided", func() {
 				It("returns an error", func() {
-					err := executeCommand(command, []string{"--badflag"}, nil)
+					err := executeCommand(command, []string{"--badflag"})
 					Expect(err).To(MatchError("unknown flag `badflag'"))
 				})
 			})
 			Context("when the id flag is not provided", func() {
 				It("returns an error", func() {
-					err := executeCommand(command, []string{}, nil)
+					err := executeCommand(command, []string{})
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--id"))
 				})
 			})

@@ -70,7 +70,7 @@ var _ = Describe("ConfigureSAMLAuthentication", func() {
 			commandLineArgs = append(commandLineArgs, "--precreated-client-secret", "test-client-secret")
 			expectedPayload.PrecreatedClientSecret = "test-client-secret"
 
-			err := executeCommand(command, commandLineArgs, nil)
+			err := executeCommand(command, commandLineArgs)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(service.SetupArgsForCall(0)).To(Equal(expectedPayload))
@@ -111,7 +111,7 @@ It will have the username 'precreated-client' and the client secret you provided
 			})
 
 			It("configures SAML with bosh admin client warning", func() {
-				err := executeCommand(command, commandLineArgs, nil)
+				err := executeCommand(command, commandLineArgs)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.SetupArgsForCall(0)).To(Equal(expectedPayload))
@@ -145,7 +145,7 @@ This is only supported in OpsManager 2.4 and up.
 			})
 
 			It("errors out if you try to provide a client secret", func() {
-				err := executeCommand(command, commandLineArgs, nil)
+				err := executeCommand(command, commandLineArgs)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring(`
 Cannot use the "--precreated-client-secret" argument.
@@ -164,7 +164,7 @@ This is only supported in OpsManager 2.5 and up.
 				expectedPayload.PrecreatedClientSecret = "test-client-secret"
 				commandLineArgs = append(commandLineArgs, "--precreated-client-secret", "test-client-secret")
 
-				err := executeCommand(command, commandLineArgs, nil)
+				err := executeCommand(command, commandLineArgs)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.SetupArgsForCall(0)).To(Equal(expectedPayload))
@@ -196,7 +196,7 @@ This was skipped due to the 'skip-create-bosh-admin-client' flag.
 				})
 
 				It("configures SAML and notifies the user that it skipped client creation", func() {
-					err := executeCommand(command, commandLineArgs, nil)
+					err := executeCommand(command, commandLineArgs)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(service.SetupArgsForCall(0)).To(Equal(expectedPayload))
@@ -228,7 +228,7 @@ This was skipped due to the 'skip-create-bosh-admin-client' flag.
 				}, nil)
 
 				command := commands.NewConfigureSAMLAuthentication(service, logger)
-				err := executeCommand(command, commandLineArgs, nil)
+				err := executeCommand(command, commandLineArgs)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.EnsureAvailabilityCallCount()).To(Equal(1))
@@ -264,7 +264,7 @@ precreated-client-secret: test-client-secret
 			It("reads configuration from config file", func() {
 				err := executeCommand(command, []string{
 					"--config", configFile.Name(),
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.SetupArgsForCall(0)).To(Equal(expectedPayload))
@@ -285,7 +285,7 @@ precreated-client-secret: test-client-secret
 				err := executeCommand(command, []string{
 					"--config", configFile.Name(),
 					"--saml-idp-metadata", "https://super.example.com:6543",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.SetupArgsForCall(0)).To(Equal(api.SetupInput{
@@ -317,14 +317,14 @@ precreated-client-secret: test-client-secret
 		Context("failure cases", func() {
 			Context("when an unknown flag is provided", func() {
 				It("returns an error", func() {
-					err := executeCommand(command, []string{"--banana"}, nil)
+					err := executeCommand(command, []string{"--banana"})
 					Expect(err).To(MatchError("unknown flag `banana'"))
 				})
 			})
 
 			Context("when config file cannot be opened", func() {
 				It("returns an error", func() {
-					err := executeCommand(command, []string{"--config", "something"}, nil)
+					err := executeCommand(command, []string{"--config", "something"})
 					Expect(err).To(MatchError("could not load the config file: could not read file (something): open something: no such file or directory"))
 
 				})
@@ -335,7 +335,7 @@ precreated-client-secret: test-client-secret
 					service.EnsureAvailabilityReturns(api.EnsureAvailabilityOutput{}, errors.New("failed to fetch status"))
 
 					command := commands.NewConfigureSAMLAuthentication(service, &fakes.Logger{})
-					err := executeCommand(command, commandLineArgs, nil)
+					err := executeCommand(command, commandLineArgs)
 					Expect(err).To(MatchError("could not determine initial configuration status: failed to fetch status"))
 				})
 			})
@@ -347,7 +347,7 @@ precreated-client-secret: test-client-secret
 					}, nil)
 
 					command := commands.NewConfigureSAMLAuthentication(service, &fakes.Logger{})
-					err := executeCommand(command, commandLineArgs, nil)
+					err := executeCommand(command, commandLineArgs)
 					Expect(err).To(MatchError("could not determine initial configuration status: received unexpected status"))
 				})
 			})
@@ -361,7 +361,7 @@ precreated-client-secret: test-client-secret
 					service.SetupReturns(api.SetupOutput{}, errors.New("could not setup"))
 
 					command := commands.NewConfigureSAMLAuthentication(service, &fakes.Logger{})
-					err := executeCommand(command, commandLineArgs, nil)
+					err := executeCommand(command, commandLineArgs)
 					Expect(err).To(MatchError("could not configure authentication: could not setup"))
 				})
 			})
@@ -382,7 +382,7 @@ precreated-client-secret: test-client-secret
 					}
 
 					command := commands.NewConfigureSAMLAuthentication(service, &fakes.Logger{})
-					err := executeCommand(command, commandLineArgs, nil)
+					err := executeCommand(command, commandLineArgs)
 					Expect(err).To(MatchError("could not determine final configuration status: failed to fetch status"))
 				})
 			})
@@ -395,7 +395,7 @@ precreated-client-secret: test-client-secret
 						"--saml-bosh-idp-metadata", "https://bosh-saml.example.com:8080",
 						"--saml-rbac-admin-group", "opsman.full_control",
 						"--saml-rbac-groups-attribute", "myenterprise",
-					}, nil)
+					})
 					Expect(err).To(HaveOccurred())
 
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--saml-idp-metadata"))
@@ -410,7 +410,7 @@ precreated-client-secret: test-client-secret
 						"--saml-idp-metadata", "https://saml.example.com:8080",
 						"--saml-rbac-admin-group", "opsman.full_control",
 						"--saml-rbac-groups-attribute", "myenterprise",
-					}, nil)
+					})
 					Expect(err).To(HaveOccurred())
 
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--saml-bosh-idp-metadata"))
@@ -425,7 +425,7 @@ precreated-client-secret: test-client-secret
 						"--saml-idp-metadata", "https://saml.example.com:8080",
 						"--saml-bosh-idp-metadata", "https://bosh-saml.example.com:8080",
 						"--saml-rbac-groups-attribute", "myenterprise",
-					}, nil)
+					})
 					Expect(err).To(HaveOccurred())
 
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--saml-rbac-admin-group"))
@@ -440,7 +440,7 @@ precreated-client-secret: test-client-secret
 						"--saml-idp-metadata", "https://saml.example.com:8080",
 						"--saml-bosh-idp-metadata", "https://bosh-saml.example.com:8080",
 						"--saml-rbac-admin-group", "opsman.full_control",
-					}, nil)
+					})
 					Expect(err).To(HaveOccurred())
 
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--saml-rbac-groups-attribute"))
@@ -454,7 +454,7 @@ precreated-client-secret: test-client-secret
 						"--saml-idp-metadata", "https://saml.example.com:8080",
 						"--saml-bosh-idp-metadata", "https://bosh-saml.example.com:8080",
 						"--saml-rbac-admin-group", "opsman.full_control",
-					}, nil)
+					})
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--decryption-passphrase"))
 				})
 			})

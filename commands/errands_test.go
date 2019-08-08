@@ -47,7 +47,7 @@ var _ = Describe("Errands", func() {
 		})
 
 		It("lists the available products", func() {
-			err := executeCommand(command, []string{"--product-name", "some-product-name"}, nil)
+			err := executeCommand(command, []string{"--product-name", "some-product-name"})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.GetStagedProductByNameCallCount()).To(Equal(1))
@@ -73,7 +73,7 @@ var _ = Describe("Errands", func() {
 				err := executeCommand(command, []string{
 					"--product-name", "some-product-name",
 					"--format", "json",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakePresenter.SetFormatCallCount()).To(Equal(1))
@@ -84,7 +84,7 @@ var _ = Describe("Errands", func() {
 		Context("failure cases", func() {
 			Context("when an unknown flag is passed", func() {
 				It("returns an error", func() {
-					err := executeCommand(command, []string{"--unknown-flag"}, nil)
+					err := executeCommand(command, []string{"--unknown-flag"})
 					Expect(err).To(MatchError("unknown flag `unknown-flag'"))
 				})
 			})
@@ -92,7 +92,7 @@ var _ = Describe("Errands", func() {
 			Context("when the staged products finder fails", func() {
 				It("returns an error", func() {
 					fakeService.GetStagedProductByNameReturns(api.StagedProductsFindOutput{}, errors.New("there was an error"))
-					err := executeCommand(command, []string{"--product-name", "some-product"}, nil)
+					err := executeCommand(command, []string{"--product-name", "some-product"})
 					Expect(err).To(MatchError("failed to find staged product \"some-product\": there was an error"))
 				})
 			})
@@ -100,14 +100,14 @@ var _ = Describe("Errands", func() {
 			Context("when the errands service fails", func() {
 				It("returns an error", func() {
 					fakeService.ListStagedProductErrandsReturns(api.ErrandsListOutput{}, errors.New("there was an error"))
-					err := executeCommand(command, []string{"--product-name", "some-product"}, nil)
+					err := executeCommand(command, []string{"--product-name", "some-product"})
 					Expect(err).To(MatchError("failed to list errands: there was an error"))
 				})
 			})
 
 			Context("when the product name is missing", func() {
 				It("returns an error", func() {
-					err := executeCommand(command, []string{}, nil)
+					err := executeCommand(command, []string{})
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--product-name"))
 				})
 			})

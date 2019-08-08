@@ -30,7 +30,7 @@ var _ = Describe("UpdateSSLCertificate", func() {
 			err := executeCommand(command, []string{
 				"--certificate-pem", "some CertPem",
 				"--private-key-pem", "some PrivateKey",
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.UpdateSSLCertificateCallCount()).To(Equal(1))
@@ -46,7 +46,7 @@ var _ = Describe("UpdateSSLCertificate", func() {
 			err := executeCommand(command, []string{
 				"--certificate-pem", "some CertPem",
 				"--private-key-pem", "some PrivateKey",
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeLogger.PrintfCallCount()).To(Equal(2))
@@ -64,14 +64,14 @@ var _ = Describe("UpdateSSLCertificate", func() {
 					err := executeCommand(command, []string{
 						"--certificate-pem", "some CertPem",
 						"--private-key-pem", "some PrivateKey",
-					}, nil)
+					})
 					Expect(err).To(MatchError("failed to apply certificate"))
 				})
 			})
 
 			Context("when an unknown flag is provided", func() {
 				It("returns an error", func() {
-					err := executeCommand(command, []string{"--badflag"}, nil)
+					err := executeCommand(command, []string{"--badflag"})
 					Expect(err).To(MatchError("unknown flag `badflag'"))
 				})
 			})
@@ -80,7 +80,7 @@ var _ = Describe("UpdateSSLCertificate", func() {
 				It("returns an error", func() {
 					err := executeCommand(command, []string{
 						"--private-key-pem", "some PrivateKey",
-					}, nil)
+					})
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--certificate-pem"))
 				})
 			})
@@ -89,7 +89,7 @@ var _ = Describe("UpdateSSLCertificate", func() {
 				It("returns an error", func() {
 					err := executeCommand(command, []string{
 						"--certificate-pem", "some CertPem",
-					}, nil)
+					})
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--private-key-pem"))
 				})
 			})

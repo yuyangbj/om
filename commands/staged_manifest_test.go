@@ -35,7 +35,7 @@ key: value
 	It("prints the manifest of the staged product", func() {
 		err := executeCommand(command, []string{
 			"--product-name", "some-product",
-		}, nil)
+		})
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(fakeService.GetStagedProductByNameCallCount()).To(Equal(1))
@@ -56,8 +56,8 @@ key: value
 			It("returns an error", func() {
 				err := executeCommand(command, []string{
 					"--some-unknown-flag", "some-value",
-				}, nil)
-				Expect(err).To(MatchError(ContainSubstring("could not parse staged-manifest flags")))
+				})
+				Expect(err).To(MatchError(ContainSubstring("unknown flag `some-unknown-flag'")))
 			})
 		})
 
@@ -67,7 +67,7 @@ key: value
 
 				err := executeCommand(command, []string{
 					"--product-name", "some-product",
-				}, nil)
+				})
 				Expect(err).To(MatchError(ContainSubstring("failed to find product: product find failed")))
 			})
 		})
@@ -78,7 +78,7 @@ key: value
 
 				err := executeCommand(command, []string{
 					"--product-name", "some-product",
-				}, nil)
+				})
 				Expect(err).To(MatchError(ContainSubstring("failed to fetch product manifest: product manifest failed")))
 			})
 		})

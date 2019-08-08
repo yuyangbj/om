@@ -53,7 +53,7 @@ type globalOptions struct {
 	VarsEnv              string `                             hidden:"true" long:"vars-env" env:"OM_VARS_ENV"      experimental:"true" description:"load vars from environment variables by specifying a prefix (e.g.: 'MY' to load MY_var=value)"`
 }
 
-var parser = flags.NewNamedParser("om", flags.PrintErrors|flags.PassAfterNonOption|flags.PassDoubleDash)
+var parser = flags.NewNamedParser("om", flags.PassAfterNonOption|flags.PassDoubleDash)
 
 func main() {
 	parser.Usage = "[global options]"

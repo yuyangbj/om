@@ -41,7 +41,7 @@ var _ = Describe("AssignStemcell", func() {
 		})
 
 		It("assigns the stemcell", func() {
-			err := executeCommand(command, []string{"--product", "cf", "--stemcell", "1234.6"}, nil)
+			err := executeCommand(command, []string{"--product", "cf", "--stemcell", "1234.6"})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.ListStemcellsCallCount()).To(Equal(1))
@@ -59,7 +59,7 @@ var _ = Describe("AssignStemcell", func() {
 
 		Context("when --stemcell latest is used", func() {
 			It("assign the latest stemcell available", func() {
-				err := executeCommand(command, []string{"--product", "cf", "--stemcell", "latest"}, nil)
+				err := executeCommand(command, []string{"--product", "cf", "--stemcell", "latest"})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeService.ListStemcellsCallCount()).To(Equal(1))
@@ -95,7 +95,7 @@ var _ = Describe("AssignStemcell", func() {
 		})
 
 		It("defaults to latest", func() {
-			err := executeCommand(command, []string{"--product", "cf"}, nil)
+			err := executeCommand(command, []string{"--product", "cf"})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.ListStemcellsCallCount()).To(Equal(1))
@@ -144,7 +144,7 @@ stemcell: "1234.6"
 		})
 
 		It("reads configuration from config file", func() {
-			err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
+			err := executeCommand(command, []string{"--config", configFile.Name()})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.ListStemcellsCallCount()).To(Equal(1))
@@ -178,7 +178,7 @@ stemcell: "1234.6"
 			}, nil)
 		})
 		It("returns an error with the available stemcells", func() {
-			err := executeCommand(command, []string{"--product", "cf", "--stemcell", "1234.1"}, nil)
+			err := executeCommand(command, []string{"--product", "cf", "--stemcell", "1234.1"})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("stemcell version 1234.1 not found in Ops Manager"))
 			Expect(err.Error()).To(ContainSubstring("Available Stemcells for \"cf\": 1234.5, 1234.6"))
@@ -204,7 +204,7 @@ stemcell: "1234.6"
 		})
 
 		It("returns an error", func() {
-			err := executeCommand(command, []string{"--product", "cf", "--stemcell", "1234.5"}, nil)
+			err := executeCommand(command, []string{"--product", "cf", "--stemcell", "1234.5"})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("could not list product stemcell: product \"cf\" not found"))
 
@@ -229,7 +229,7 @@ stemcell: "1234.6"
 		})
 
 		It("returns an error", func() {
-			err := executeCommand(command, []string{"--product", "cf", "--stemcell", "1234.5"}, nil)
+			err := executeCommand(command, []string{"--product", "cf", "--stemcell", "1234.5"})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("could not assign stemcell: product \"cf\" is staged for deletion"))
 
@@ -255,7 +255,7 @@ stemcell: "1234.6"
 		})
 
 		It("returns an error", func() {
-			err := executeCommand(command, []string{"--product", "cf", "--stemcell", "1234.5"}, nil)
+			err := executeCommand(command, []string{"--product", "cf", "--stemcell", "1234.5"})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("no stemcells are available for \"cf\"."))
 			Expect(err.Error()).To(ContainSubstring("minimum required stemcell version is: 1234.9"))
@@ -268,14 +268,14 @@ stemcell: "1234.6"
 
 	Context("when an unknown flag is provided", func() {
 		It("returns an error", func() {
-			err := executeCommand(command, []string{"--badflag"}, nil)
+			err := executeCommand(command, []string{"--badflag"})
 			Expect(err).To(MatchError("unknown flag `badflag'"))
 		})
 	})
 
 	Context("when the product flag is not provided", func() {
 		It("returns an error", func() {
-			err := executeCommand(command, []string{}, nil)
+			err := executeCommand(command, []string{})
 			Expect(err.Error()).To(MatchRegexp("the required flag.*--product"))
 		})
 	})

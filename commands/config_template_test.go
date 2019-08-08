@@ -43,7 +43,7 @@ var _ = Describe("ConfigTemplate", func() {
 						"--product-version", "d",
 					}
 
-					err := executeCommand(command, args, nil)
+					err := executeCommand(command, args)
 					Expect(err).To(MatchError("output-directory does not exist: /not/real/directory"))
 				})
 
@@ -67,7 +67,7 @@ var _ = Describe("ConfigTemplate", func() {
 				})
 
 				It("creates nested subdirectories named by product slug and version", func() {
-					err := executeCommand(command, args, nil)
+					err := executeCommand(command, args)
 					Expect(err).ToNot(HaveOccurred())
 
 					productDir := filepath.Join(tempDir, "example-product")
@@ -78,7 +78,7 @@ var _ = Describe("ConfigTemplate", func() {
 				})
 
 				It("creates the various generated sub directories within the product directory", func() {
-					err := executeCommand(command, args, nil)
+					err := executeCommand(command, args)
 					Expect(err).ToNot(HaveOccurred())
 
 					featuresDir := filepath.Join(tempDir, "example-product", "1.1.1", "features")
@@ -95,7 +95,7 @@ var _ = Describe("ConfigTemplate", func() {
 				})
 
 				It("creates the correct files", func() {
-					err := executeCommand(command, args, nil)
+					err := executeCommand(command, args)
 					Expect(err).ToNot(HaveOccurred())
 
 					productDir := filepath.Join(tempDir, "example-product", "1.1.1")
@@ -120,9 +120,9 @@ var _ = Describe("ConfigTemplate", func() {
 				})
 			})
 			It("returns an error", func() {
-				err := executeCommand(command, []string{"--invalid"}, nil)
+				err := executeCommand(command, []string{"--invalid"})
 				Expect(err).To(MatchError("unknown flag `invalid'"))
-				err = executeCommand(command, []string{"--unreal"}, nil)
+				err = executeCommand(command, []string{"--unreal"})
 				Expect(err).To(MatchError("unknown flag `unreal'"))
 			})
 		})
@@ -148,7 +148,7 @@ var _ = Describe("ConfigTemplate", func() {
 						break
 					}
 				}
-				err := executeCommand(command, args, nil)
+				err := executeCommand(command, args)
 				Expect(err).To(MatchError(fmt.Sprintf("missing required flag \"%s\"", required)))
 			},
 				Entry("with output-directory", "--output-directory"),
@@ -178,7 +178,7 @@ var _ = Describe("ConfigTemplate", func() {
 						"--product-version", "1.1.1",
 					}
 
-					err := executeCommand(command, args, nil)
+					err := executeCommand(command, args)
 					Expect(err).To(MatchError("error getting metadata for example-product at version 1.1.1: cannot get metadata"))
 				})
 			})
@@ -200,7 +200,7 @@ var _ = Describe("ConfigTemplate", func() {
 						"--product-version", "1.1.1",
 					}
 
-					err := executeCommand(command, args, nil)
+					err := executeCommand(command, args)
 					Expect(err).To(HaveOccurred())
 				})
 			})

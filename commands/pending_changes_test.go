@@ -55,7 +55,7 @@ var _ = Describe("PendingChanges", func() {
 		})
 
 		It("lists the pending changes", func() {
-			err := executeCommand(command, []string{}, nil)
+			err := executeCommand(command, []string{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(presenter.SetFormatArgsForCall(0)).To(Equal("table"))
@@ -119,7 +119,7 @@ var _ = Describe("PendingChanges", func() {
 				})
 
 				It("lists change information for all products and returns an error", func() {
-					err := executeCommand(command, options, nil)
+					err := executeCommand(command, options)
 					Expect(presenter.PresentPendingChangesCallCount()).To(Equal(1))
 					Expect(err).To(HaveOccurred())
 				})
@@ -137,7 +137,7 @@ var _ = Describe("PendingChanges", func() {
 					}, nil)
 				})
 				It("lists change information for all products and does not return an error", func() {
-					err := executeCommand(command, options, nil)
+					err := executeCommand(command, options)
 					Expect(presenter.PresentPendingChangesCallCount()).To(Equal(1))
 					Expect(err).NotTo(HaveOccurred())
 				})
@@ -146,7 +146,7 @@ var _ = Describe("PendingChanges", func() {
 
 		When("the format flag is provided", func() {
 			It("sets the format on the presenter", func() {
-				err := executeCommand(command, []string{"--format", "json"}, nil)
+				err := executeCommand(command, []string{"--format", "json"})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(presenter.SetFormatArgsForCall(0)).To(Equal("json"))
@@ -156,7 +156,7 @@ var _ = Describe("PendingChanges", func() {
 		Describe("failure cases", func() {
 			When("an unknown flag is passed", func() {
 				It("returns an error", func() {
-					err := executeCommand(command, []string{"--unknown-flag"}, nil)
+					err := executeCommand(command, []string{"--unknown-flag"})
 					Expect(err).To(MatchError("unknown flag `unknown-flag'"))
 				})
 			})
@@ -167,7 +167,7 @@ var _ = Describe("PendingChanges", func() {
 
 					pcService.ListStagedPendingChangesReturns(api.PendingChangesOutput{}, errors.New("beep boop"))
 
-					err := executeCommand(command, []string{}, nil)
+					err := executeCommand(command, []string{})
 					Expect(err).To(MatchError("failed to retrieve pending changes beep boop"))
 				})
 			})
@@ -189,7 +189,7 @@ var _ = Describe("PendingChanges", func() {
 							},
 						}, nil)
 
-						err := executeCommand(command, []string{}, nil)
+						err := executeCommand(command, []string{})
 						Expect(presenter.PresentPendingChangesCallCount()).To(Equal(1))
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("configuration is incomplete for guid some-product-without-errands"))
@@ -211,7 +211,7 @@ var _ = Describe("PendingChanges", func() {
 							},
 						}, nil)
 
-						err := executeCommand(command, []string{}, nil)
+						err := executeCommand(command, []string{})
 						Expect(presenter.PresentPendingChangesCallCount()).To(Equal(1))
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("stemcell is missing for one or more products for guid some-product-without-errands"))
@@ -234,7 +234,7 @@ var _ = Describe("PendingChanges", func() {
 							},
 						}, nil)
 
-						err := executeCommand(command, []string{}, nil)
+						err := executeCommand(command, []string{})
 						Expect(presenter.PresentPendingChangesCallCount()).To(Equal(1))
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("one or more properties are invalid for guid some-product-without-errands"))
@@ -268,7 +268,7 @@ var _ = Describe("PendingChanges", func() {
 								},
 							}, nil)
 
-							err := executeCommand(command, []string{}, nil)
+							err := executeCommand(command, []string{})
 							Expect(presenter.PresentPendingChangesCallCount()).To(Equal(1))
 							Expect(err).To(HaveOccurred())
 							Expect(err.Error()).To(ContainSubstring("one or more properties are invalid for guid some-product-without-errands"))
@@ -298,7 +298,7 @@ var _ = Describe("PendingChanges", func() {
 								},
 							}, nil)
 
-							err := executeCommand(command, []string{}, nil)
+							err := executeCommand(command, []string{})
 							Expect(presenter.PresentPendingChangesCallCount()).To(Equal(1))
 							Expect(err).To(HaveOccurred())
 							Expect(err.Error()).To(ContainSubstring("one or more properties are invalid for guid some-product-without-errands"))

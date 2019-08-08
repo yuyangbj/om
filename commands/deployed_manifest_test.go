@@ -36,7 +36,7 @@ key: value
 	It("prints the manifest of the deployed product", func() {
 		err := executeCommand(command, []string{
 			"--product-name", "some-product",
-		}, nil)
+		})
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(fakeService.ListDeployedProductsCallCount()).To(Equal(1))
@@ -56,7 +56,7 @@ key: value
 			It("returns an error", func() {
 				err := executeCommand(command, []string{
 					"--unknown-flag", "unknown-value",
-				}, nil)
+				})
 				Expect(err).To(MatchError(ContainSubstring("flag provided but not defined")))
 			})
 		})
@@ -67,7 +67,7 @@ key: value
 
 				err := executeCommand(command, []string{
 					"--product-name", "some-product",
-				}, nil)
+				})
 				Expect(err).To(MatchError(ContainSubstring("deployed products cannot be listed")))
 			})
 		})
@@ -76,7 +76,7 @@ key: value
 			It("returns an error", func() {
 				err := executeCommand(command, []string{
 					"--product-name", "unknown-product",
-				}, nil)
+				})
 				Expect(err).To(MatchError(ContainSubstring("could not find given product")))
 			})
 		})
@@ -86,7 +86,7 @@ key: value
 				fakeService.GetDeployedProductManifestReturns("", errors.New("manifest could not be retrieved"))
 				err := executeCommand(command, []string{
 					"--product-name", "some-product",
-				}, nil)
+				})
 				Expect(err).To(MatchError(ContainSubstring("manifest could not be retrieved")))
 			})
 		})

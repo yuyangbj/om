@@ -42,7 +42,7 @@ var _ = Describe("GenerateCertificateAuthority", func() {
 		})
 
 		It("makes a request to the Opsman to generate a certificate authority and prints to a table", func() {
-			err := executeCommand(command, []string{}, nil)
+			err := executeCommand(command, []string{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.GenerateCertificateAuthorityCallCount()).To(Equal(1))
@@ -55,7 +55,7 @@ var _ = Describe("GenerateCertificateAuthority", func() {
 			It("sets the format on the presenter", func() {
 				err := executeCommand(command, []string{
 					"--format", "json",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakePresenter.SetFormatCallCount()).To(Equal(1))
@@ -66,7 +66,7 @@ var _ = Describe("GenerateCertificateAuthority", func() {
 		Context("failure cases", func() {
 			Context("when an unknown flag is passed", func() {
 				It("returns an error", func() {
-					err := executeCommand(command, []string{"--unknown-flag"}, nil)
+					err := executeCommand(command, []string{"--unknown-flag"})
 					Expect(err).To(MatchError("unknown flag `unknown-flag'"))
 				})
 			})
@@ -74,7 +74,7 @@ var _ = Describe("GenerateCertificateAuthority", func() {
 			It("returns an error when the service fails to generate a certificate", func() {
 				fakeService.GenerateCertificateAuthorityReturns(api.CA{}, errors.New("failed to generate certificate"))
 
-				err := executeCommand(command, []string{}, nil)
+				err := executeCommand(command, []string{})
 				Expect(err).To(MatchError("failed to generate certificate"))
 			})
 		})

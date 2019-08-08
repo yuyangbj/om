@@ -57,7 +57,7 @@ var _ = Describe("Installations", func() {
 		})
 
 		It("lists recent installations as a table", func() {
-			err := executeCommand(command, []string{}, nil)
+			err := executeCommand(command, []string{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakePresenter.PresentInstallationsCallCount()).To(Equal(1))
@@ -80,7 +80,7 @@ var _ = Describe("Installations", func() {
 
 		Context("when the format flag is provided", func() {
 			It("sets the format on the presenter", func() {
-				err := executeCommand(command, []string{"--format", "json"}, nil)
+				err := executeCommand(command, []string{"--format", "json"})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakePresenter.SetFormatCallCount()).To(Equal(1))
@@ -91,7 +91,7 @@ var _ = Describe("Installations", func() {
 		Context("Failure cases", func() {
 			Context("when an unknown flag is passed", func() {
 				It("returns an error", func() {
-					err := executeCommand(command, []string{"--unknown-flag"}, nil)
+					err := executeCommand(command, []string{"--unknown-flag"})
 					Expect(err).To(MatchError("unknown flag `unknown-flag'"))
 				})
 			})
@@ -100,7 +100,7 @@ var _ = Describe("Installations", func() {
 				It("returns an error", func() {
 					fakeService.ListInstallationsReturns([]api.InstallationsServiceOutput{}, errors.New("failed to retrieve installations"))
 
-					err := executeCommand(command, []string{}, nil)
+					err := executeCommand(command, []string{})
 					Expect(err).To(MatchError("failed to retrieve installations"))
 				})
 			})

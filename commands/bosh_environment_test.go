@@ -84,7 +84,7 @@ var _ = Describe("bosh-env", func() {
 
 		Describe("Execute with a nonexistent ssh key", func() {
 			It("executes the API call", func() {
-				err := executeCommand(command, []string{"-i", "somepath.pem"}, nil)
+				err := executeCommand(command, []string{"-i", "somepath.pem"})
 
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("ssh key file 'somepath.pem' does not exist"))
@@ -120,7 +120,7 @@ var _ = Describe("bosh-env", func() {
 				err = os.Chdir("./tmp")
 				Expect(err).NotTo(HaveOccurred())
 
-				err = executeCommand(command, []string{"-i", filepath.Base(keyFile)}, nil)
+				err = executeCommand(command, []string{"-i", filepath.Base(keyFile)})
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(stdout.PrintlnCallCount()).To(Equal(10))
 				for i := 0; i < 10; i++ {
@@ -147,7 +147,7 @@ var _ = Describe("bosh-env", func() {
 						},
 					},
 				}, nil)
-				err := executeCommand(command, []string{}, nil)
+				err := executeCommand(command, []string{})
 
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(stdout.PrintlnCallCount()).To(Equal(8))
@@ -162,7 +162,7 @@ var _ = Describe("bosh-env", func() {
 
 		Describe("Execute without ssh key", func() {
 			It("executes the API call", func() {
-				err := executeCommand(command, []string{}, nil)
+				err := executeCommand(command, []string{})
 
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(stdout.PrintlnCallCount()).To(Equal(8))

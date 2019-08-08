@@ -47,7 +47,7 @@ var _ = Describe("ConfigureAuthentication", func() {
 				"--password", "some-password",
 				"--decryption-passphrase", "some-passphrase",
 				"--precreated-client-secret", "test-client-secret",
-			}, nil)
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(service.SetupArgsForCall(0)).To(Equal(api.SetupInput{
@@ -90,7 +90,7 @@ It will have the username 'precreated-client' and the client secret you provided
 					"--username", "some-username",
 					"--password", "some-password",
 					"--decryption-passphrase", "some-passphrase",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.EnsureAvailabilityCallCount()).To(Equal(1))
@@ -133,7 +133,7 @@ decryption-passphrase: some-passphrase
 				command := commands.NewConfigureAuthentication(service, logger)
 				err := executeCommand(command, []string{
 					"--config", configFile.Name(),
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.SetupArgsForCall(0)).To(Equal(api.SetupInput{
@@ -174,7 +174,7 @@ decryption-passphrase: some-passphrase
 				err := executeCommand(command, []string{
 					"--config", configFile.Name(),
 					"--password", "some-password-1",
-				}, nil)
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.SetupArgsForCall(0)).To(Equal(api.SetupInput{
@@ -223,7 +223,7 @@ decryption-passphrase: some-passphrase
 					"--password", "some-password",
 					"--decryption-passphrase", "some-passphrase",
 					"--precreated-client-secret", "test-client-secret",
-				}, nil)
+				})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring(`
 Cannot use the "--precreated-client-secret" argument.
@@ -236,7 +236,7 @@ This is only supported in OpsManager 2.5 and up.
 			Context("when an unknown flag is provided", func() {
 				It("returns an error", func() {
 					command := commands.NewConfigureAuthentication(service, logger)
-					err := executeCommand(command, []string{"--banana"}, nil)
+					err := executeCommand(command, []string{"--banana"})
 					Expect(err).To(MatchError("unknown flag `banana'"))
 				})
 			})
@@ -244,7 +244,7 @@ This is only supported in OpsManager 2.5 and up.
 			Context("when config file cannot be opened", func() {
 				It("returns an error", func() {
 					command := commands.NewConfigureAuthentication(service, logger)
-					err := executeCommand(command, []string{"--config", "something"}, nil)
+					err := executeCommand(command, []string{"--config", "something"})
 					Expect(err).To(MatchError("could not load the config file: could not read file (something): open something: no such file or directory"))
 
 				})
@@ -259,7 +259,7 @@ This is only supported in OpsManager 2.5 and up.
 						"--username", "some-username",
 						"--password", "some-password",
 						"--decryption-passphrase", "some-passphrase",
-					}, nil)
+					})
 					Expect(err).To(MatchError("could not determine initial configuration status: failed to fetch status"))
 				})
 			})
@@ -275,7 +275,7 @@ This is only supported in OpsManager 2.5 and up.
 						"--username", "some-username",
 						"--password", "some-password",
 						"--decryption-passphrase", "some-passphrase",
-					}, nil)
+					})
 					Expect(err).To(MatchError("could not determine initial configuration status: received unexpected status"))
 				})
 			})
@@ -293,7 +293,7 @@ This is only supported in OpsManager 2.5 and up.
 						"--username", "some-username",
 						"--password", "some-password",
 						"--decryption-passphrase", "some-passphrase",
-					}, nil)
+					})
 					Expect(err).To(MatchError("could not configure authentication: could not setup"))
 				})
 			})
@@ -318,7 +318,7 @@ This is only supported in OpsManager 2.5 and up.
 						"--username", "some-username",
 						"--password", "some-password",
 						"--decryption-passphrase", "some-passphrase",
-					}, nil)
+					})
 					Expect(err).To(MatchError("could not determine final configuration status: failed to fetch status"))
 				})
 			})
@@ -329,7 +329,7 @@ This is only supported in OpsManager 2.5 and up.
 					err := executeCommand(command, []string{
 						"--password", "some-password",
 						"--decryption-passphrase", "some-passphrase",
-					}, nil)
+					})
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--username"))
 				})
 			})
@@ -340,7 +340,7 @@ This is only supported in OpsManager 2.5 and up.
 					err := executeCommand(command, []string{
 						"--username", "some-username",
 						"--decryption-passphrase", "some-passphrase",
-					}, nil)
+					})
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--password"))
 				})
 			})
@@ -351,7 +351,7 @@ This is only supported in OpsManager 2.5 and up.
 					err := executeCommand(command, []string{
 						"--username", "some-username",
 						"--password", "some-password",
-					}, nil)
+					})
 					Expect(err.Error()).To(MatchRegexp("the required flag.*--decryption-passphrase"))
 				})
 			})

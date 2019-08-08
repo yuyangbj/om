@@ -55,7 +55,7 @@ var _ = Describe("Certificate Authorities", func() {
 		})
 
 		It("prints the certificate authorities to a table", func() {
-			err := executeCommand(certificateAuthorities, []string{}, nil)
+			err := executeCommand(certificateAuthorities, []string{})
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(fakeCertificateAuthoritiesService.ListCertificateAuthoritiesCallCount()).To(Equal(1))
@@ -68,7 +68,7 @@ var _ = Describe("Certificate Authorities", func() {
 			It("calls the presenter to set the json format", func() {
 				err := executeCommand(certificateAuthorities, []string{
 					"--format", "json",
-				}, nil)
+				})
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakePresenter.SetFormatCallCount()).To(Equal(1))
@@ -78,7 +78,7 @@ var _ = Describe("Certificate Authorities", func() {
 
 		Context("when the flag cannot parsed", func() {
 			It("returns an error", func() {
-				err := executeCommand(certificateAuthorities, []string{"--bogus", "nothing"}, nil)
+				err := executeCommand(certificateAuthorities, []string{"--bogus", "nothing"})
 				Expect(err).To(MatchError(
 					"unknown flag `bogus'",
 				))
@@ -92,7 +92,7 @@ var _ = Describe("Certificate Authorities", func() {
 					fmt.Errorf("could not get certificate authorities"),
 				)
 
-				err := executeCommand(certificateAuthorities, []string{}, nil)
+				err := executeCommand(certificateAuthorities, []string{})
 				Expect(err).To(MatchError("could not get certificate authorities"))
 			})
 		})

@@ -32,7 +32,7 @@ var _ = Describe("DiagnosticReport", func() {
 		})
 
 		It("displays the diagnostic report", func() {
-			err := executeCommand(command, []string{}, nil)
+			err := executeCommand(command, []string{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.GetDiagnosticReportCallCount()).To(Equal(1))
@@ -48,14 +48,14 @@ var _ = Describe("DiagnosticReport", func() {
 			It("returns an error", func() {
 				fakeService.GetDiagnosticReportReturns(api.DiagnosticReport{}, errors.New("beep boop"))
 
-				err := executeCommand(command, []string{}, nil)
+				err := executeCommand(command, []string{})
 				Expect(err).To(MatchError("failed to retrieve diagnostic-report beep boop"))
 			})
 		})
 
 		Context("when an unknown flag is passed", func() {
 			It("returns an error", func() {
-				err := executeCommand(command, []string{"--unknown-flag"}, nil)
+				err := executeCommand(command, []string{"--unknown-flag"})
 				Expect(err).To(MatchError("unknown flag `unknown-flag'"))
 			})
 		})

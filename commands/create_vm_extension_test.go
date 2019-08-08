@@ -59,7 +59,7 @@ var _ = Describe("CreateVMExtension", func() {
 			err := executeCommand(command, []string{
 				"--name", "some-vm-extension",
 				"--cloud-properties", "{ \"iam_instance_profile\": \"some-iam-profile\", \"elbs\": [\"some-elb\"] }",
-			}, nil)
+			})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(fakeService.CreateStagedVMExtensionArgsForCall(0)).To(Equal(api.CreateVMExtension{
@@ -90,7 +90,7 @@ var _ = Describe("CreateVMExtension", func() {
 					err := executeCommand(command, []string{
 						"--config", configFile.Name(),
 						"--vars-file", varsFile.Name(),
-					}, nil)
+					})
 
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakeService.CreateStagedVMExtensionArgsForCall(0)).To(Equal(api.CreateVMExtension{
@@ -106,7 +106,7 @@ var _ = Describe("CreateVMExtension", func() {
 			})
 
 			Context("with a var defined", func() {
-				It("makes a request to the OpsMan to create a VM extension", func() {
+				FIt("makes a request to the OpsMan to create a VM extension", func() {
 					configFile, err = ioutil.TempFile("", "")
 					Expect(err).NotTo(HaveOccurred())
 
@@ -119,7 +119,7 @@ var _ = Describe("CreateVMExtension", func() {
 					err := executeCommand(command, []string{
 						"--config", configFile.Name(),
 						"--var", "vm_extension_name=some-vm-extension",
-					}, nil)
+					})
 
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakeService.CreateStagedVMExtensionArgsForCall(0)).To(Equal(api.CreateVMExtension{
@@ -149,7 +149,7 @@ var _ = Describe("CreateVMExtension", func() {
 					err := executeCommand(command, []string{
 						"--config", configFile.Name(),
 						"--vars-env", "OM_VAR",
-					}, nil)
+					})
 
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakeService.CreateStagedVMExtensionArgsForCall(0)).To(Equal(api.CreateVMExtension{
@@ -174,7 +174,7 @@ var _ = Describe("CreateVMExtension", func() {
 					err := executeCommand(command, []string{
 						"--name", "some-vm-extension",
 						"--cloud-properties", "{ \"iam_instance_profile\": \"some-iam-profile\", \"elbs\": [\"some-elb\"] }",
-					}, nil)
+					})
 
 					Expect(err).To(MatchError("failed to create VM extension"))
 				})
@@ -182,14 +182,14 @@ var _ = Describe("CreateVMExtension", func() {
 
 			Context("when an unknown flag is provided", func() {
 				It("returns an error", func() {
-					err := executeCommand(command, []string{"--badflag"}, nil)
+					err := executeCommand(command, []string{"--badflag"})
 					Expect(err).To(MatchError("unknown flag `badflag'"))
 				})
 			})
 
 			Context("error when name is not provided", func() {
 				It("returns an error when flag is missing", func() {
-					err := executeCommand(command, []string{"--cloud-properties", "{ \"iam_instance_profile\": \"some-iam-profile\", \"elbs\": [\"some-elb\"] }"}, nil)
+					err := executeCommand(command, []string{"--cloud-properties", "{ \"iam_instance_profile\": \"some-iam-profile\", \"elbs\": [\"some-elb\"] }"})
 					Expect(err).To(MatchError("VM Extension name must provide name via --name flag"))
 					Expect(fakeService.CreateStagedVMExtensionCallCount()).Should(Equal(0))
 				})
@@ -202,7 +202,7 @@ var _ = Describe("CreateVMExtension", func() {
 
 					err := executeCommand(command, []string{
 						"--config", configFile.Name(),
-					}, nil)
+					})
 
 					Expect(err).To(MatchError("Config file must contain name element"))
 					Expect(fakeService.CreateStagedVMExtensionCallCount()).Should(Equal(0))
@@ -220,7 +220,7 @@ var _ = Describe("CreateVMExtension", func() {
 
 					err := executeCommand(command, []string{
 						"--config", configFile.Name(),
-					}, nil)
+					})
 
 					Expect(err.Error()).Should(ContainSubstring("Expected to find variables"))
 
@@ -237,7 +237,7 @@ var _ = Describe("CreateVMExtension", func() {
 
 					err := executeCommand(command, []string{
 						"--config", configFile.Name(),
-					}, nil)
+					})
 
 					Expect(err.Error()).Should(ContainSubstring("could not be parsed as valid configuration: yaml"))
 

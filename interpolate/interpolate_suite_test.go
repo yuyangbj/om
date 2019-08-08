@@ -187,7 +187,8 @@ var _ = Describe("Execute", func() {
 var _ = Describe("FromConfigFile", func() {
 	It("does nothing if the struct does not have the ConfigFile field", func() {
 		config := struct{}{}
-		_, err := interpolate.FromConfigFile(&config, nil)
+		hasConfig, err := interpolate.FromConfigFile(&config, nil)
+		Expect(hasConfig).To(BeFalse())
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -209,7 +210,8 @@ var _ = Describe("FromConfigFile", func() {
 					ConfigFile: writeFile(`name: Bob`),
 				},
 			}
-			_, err := interpolate.FromConfigFile(&c, nil)
+			hasConfig, err := interpolate.FromConfigFile(&c, nil)
+			Expect(hasConfig).To(BeTrue())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c.Options.Name).To(Equal("Bob"))
 		})
@@ -221,7 +223,8 @@ var _ = Describe("FromConfigFile", func() {
 					VarsFile:   []string{writeFile(`name: Bob`)},
 				},
 			}
-			_, err := interpolate.FromConfigFile(&c, nil)
+			hasConfig, err := interpolate.FromConfigFile(&c, nil)
+			Expect(hasConfig).To(BeTrue())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c.Options.Name).To(Equal("Bob"))
 		})
@@ -233,7 +236,8 @@ var _ = Describe("FromConfigFile", func() {
 					Vars:       []string{`name=Bob`},
 				},
 			}
-			_, err := interpolate.FromConfigFile(&c, nil)
+			hasConfig, err := interpolate.FromConfigFile(&c, nil)
+			Expect(hasConfig).To(BeTrue())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c.Options.Name).To(Equal("Bob"))
 		})
@@ -249,14 +253,27 @@ var _ = Describe("FromConfigFile", func() {
 			Expect(err).NotTo(HaveOccurred())
 			defer os.Unsetenv("OM_VAR_name")
 
-			_, err = interpolate.FromConfigFile(&c, os.Environ)
+			_, err = interpolate.FromConfigFile(&c, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Options.Name).To(Equal("Bob"))
+		})
+
+		It("uses the args passed in as part of the argument parsing", func() {
+			c := config{
+				Options: options{
+					ConfigFile: writeFile(``),
+				},
+			}
+			hasConfig, err := interpolate.FromConfigFile(&c, []string{"--name", "Bob"})
+			Expect(hasConfig).To(BeTrue())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c.Options.Name).To(Equal("Bob"))
 		})
 
 		It("does nothing if the config file is not defined", func() {
 			c := config{}
-			_, err := interpolate.FromConfigFile(&c, nil)
+			hasConfig, err := interpolate.FromConfigFile(&c, []string{})
+			Expect(hasConfig).To(BeFalse())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c.Options.Name).To(Equal(""))
 		})
@@ -275,7 +292,8 @@ var _ = Describe("FromConfigFile", func() {
 			c := config{
 				ConfigFile: writeFile(`name: Bob`),
 			}
-			_, err := interpolate.FromConfigFile(&c, nil)
+			hasConfig, err := interpolate.FromConfigFile(&c, nil)
+			Expect(hasConfig).To(BeTrue())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c.Name).To(Equal("Bob"))
 		})
@@ -285,7 +303,8 @@ var _ = Describe("FromConfigFile", func() {
 				ConfigFile: writeFile(`name: ((name))`),
 				VarsFile:   []string{writeFile(`name: Bob`)},
 			}
-			_, err := interpolate.FromConfigFile(&c, nil)
+			hasConfig, err := interpolate.FromConfigFile(&c, nil)
+			Expect(hasConfig).To(BeTrue())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c.Name).To(Equal("Bob"))
 		})
@@ -293,9 +312,10 @@ var _ = Describe("FromConfigFile", func() {
 		It("can read values from vars", func() {
 			c := config{
 				ConfigFile: writeFile(`name: ((name))`),
-				Vars:   []string{`name=Bob`},
+				Vars:       []string{`name=Bob`},
 			}
-			_, err := interpolate.FromConfigFile(&c, nil)
+			hasConfig, err := interpolate.FromConfigFile(&c, nil)
+			Expect(hasConfig).To(BeTrue())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c.Name).To(Equal("Bob"))
 		})
@@ -303,20 +323,31 @@ var _ = Describe("FromConfigFile", func() {
 		It("can read values from vars-env", func() {
 			c := config{
 				ConfigFile: writeFile(`name: ((name))`),
-				VarsEnv:   []string{`OM_VAR`},
+				VarsEnv:    []string{`OM_VAR`},
 			}
 			err := os.Setenv("OM_VAR_name", "Bob")
 			Expect(err).NotTo(HaveOccurred())
 			defer os.Unsetenv("OM_VAR_name")
 
-			_, err = interpolate.FromConfigFile(&c, os.Environ)
+			_, err = interpolate.FromConfigFile(&c, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Name).To(Equal("Bob"))
+		})
+
+		It("uses the args passed in as part of the argument parsing", func() {
+			c := config{
+				ConfigFile: writeFile(``),
+			}
+			hasConfig, err := interpolate.FromConfigFile(&c, []string{"--name", "Bob"})
+			Expect(hasConfig).To(BeTrue())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c.Name).To(Equal("Bob"))
 		})
 
 		It("does nothing if the config file is not defined", func() {
 			c := config{}
-			_, err := interpolate.FromConfigFile(&c, nil)
+			hasConfig, err := interpolate.FromConfigFile(&c, nil)
+			Expect(hasConfig).To(BeFalse())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c.Name).To(Equal(""))
 		})

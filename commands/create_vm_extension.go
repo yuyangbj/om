@@ -21,7 +21,7 @@ type CreateVMExtension struct {
 	logger      logger
 	Options     struct {
 		Name            string   `long:"name"               short:"n"   description:"VM extension name"`
-		ConfigFile      string   `long:"config"             short:"c"   description:"path to yml file containing all config fields (see docs/create-vm-extension/README.md for format)"`
+		Config          string   `long:"config"             short:"c"   description:"path to yml file containing all config fields (see docs/create-vm-extension/README.md for format)"`
 		VarsFile        []string `long:"vars-file"          short:"l"   description:"Load variables from a YAML file"`
 		VarsEnv         []string `long:"vars-env"                       description:"Load variables from environment variables (e.g.: 'MY' to load MY_var=value)"`
 		Vars            []string `long:"var"                short:"v"   description:"Load variable from the command line. Format: VAR=VAL"`
@@ -43,10 +43,10 @@ func (c CreateVMExtension) Execute(args []string) error {
 		name            string
 		cloudProperties json.RawMessage
 	)
-	if c.Options.ConfigFile != "" {
+	if c.Options.Config != "" {
 		var cfg config.VMExtensionConfig
 		configContents, err := interpolate.Execute(interpolate.Options{
-			TemplateFile:  c.Options.ConfigFile,
+			TemplateFile:  c.Options.Config,
 			VarsFiles:     c.Options.VarsFile,
 			EnvironFunc:   c.environFunc,
 			VarsEnvs:      c.Options.VarsEnv,
@@ -60,7 +60,7 @@ func (c CreateVMExtension) Execute(args []string) error {
 
 		err = yaml.Unmarshal(configContents, &cfg)
 		if err != nil {
-			return fmt.Errorf("%s could not be parsed as valid configuration: %s", c.Options.ConfigFile, err)
+			return fmt.Errorf("%s could not be parsed as valid configuration: %s", c.Options.Config, err)
 		}
 
 		if cfg.VMExtension.Name == "" {

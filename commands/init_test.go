@@ -5,7 +5,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/om/interpolate"
-	"os"
 	"testing"
 )
 
@@ -15,17 +14,16 @@ func TestCommands(t *testing.T) {
 }
 
 func executeCommand(command interface{}, args []string) error {
-	parser := flags.NewParser(command, flags.HelpFlag|flags.PassDoubleDash)
-	_, parseErr := parser.ParseArgs(args)
-	if ok, configErr := interpolate.FromConfigFile(command, os.Environ); ok {
-		if configErr != nil {
-			return configErr
+	if ok, err := interpolate.FromConfigFile(command, args); ok {
+		if err != nil {
+			return err
 		}
-		return command.(flags.Commander).Execute([]string{})
-	}
-
-	if parseErr != nil {
-		return parseErr
+	} else {
+		parser := flags.NewParser(command, flags.HelpFlag|flags.PassDoubleDash)
+		_, err := parser.ParseArgs(args)
+		if err != nil {
+			return err
+		}
 	}
 
 	return command.(flags.Commander).Execute([]string{})

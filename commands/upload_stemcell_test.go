@@ -457,7 +457,7 @@ shasum: 2815ab9694a4a2cfd59424a734833010e143a0b2db20be3741507f177f289f44
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("reads configuration from config file", func() {
+		FIt("reads configuration from config file", func() {
 			fakeService.InfoReturns(api.Info{Version: "2.2-build.1"}, nil)
 			command := commands.NewUploadStemcell(multipart, fakeService, logger)
 			err := executeCommand(command, []string{

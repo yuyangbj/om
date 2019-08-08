@@ -106,7 +106,7 @@ var _ = Describe("CreateVMExtension", func() {
 			})
 
 			Context("with a var defined", func() {
-				FIt("makes a request to the OpsMan to create a VM extension", func() {
+				It("makes a request to the OpsMan to create a VM extension", func() {
 					configFile, err = ioutil.TempFile("", "")
 					Expect(err).NotTo(HaveOccurred())
 

@@ -8,7 +8,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -81,7 +80,7 @@ var _ = Describe("ApplyChanges", func() {
 		It("applies changes to the Ops Manager", func() {
 			command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
 
-			err := command.Execute([]string{})
+			err := executeCommand(command, []string{}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(service.CreateInstallationCallCount()).To(Equal(1))
@@ -111,7 +110,7 @@ var _ = Describe("ApplyChanges", func() {
 
 				command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
 
-				err := command.Execute([]string{"--ignore-warnings"})
+				err := executeCommand(command, []string{"--ignore-warnings"}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				ignoreWarnings, _, _, _ := service.CreateInstallationArgsForCall(0)
@@ -123,7 +122,7 @@ var _ = Describe("ApplyChanges", func() {
 			It("applies changes while not deploying products", func() {
 				command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
 
-				err := command.Execute([]string{"--skip-deploy-products"})
+				err := executeCommand(command, []string{"--skip-deploy-products"}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				_, deployProducts, _, _ := service.CreateInstallationArgsForCall(0)
@@ -132,7 +131,7 @@ var _ = Describe("ApplyChanges", func() {
 
 			It("fails if product names were specified", func() {
 				command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
-				err := command.Execute([]string{"--skip-deploy-products", "--product-name", "product1"})
+				err := executeCommand(command, []string{"--skip-deploy-products", "--product-name", "product1"}, nil)
 				Expect(err).To(HaveOccurred())
 			})
 		})
@@ -144,7 +143,7 @@ var _ = Describe("ApplyChanges", func() {
 				service.RunningInstallationReturns(api.InstallationsServiceOutput{}, nil)
 
 				command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
-				err := command.Execute([]string{"--product-name", "product1", "--product-name", "product2"})
+				err := executeCommand(command, []string{"--product-name", "product1", "--product-name", "product2"}, nil)
 				Expect(err).To(HaveOccurred())
 
 				_, _, productNames, _ := service.CreateInstallationArgsForCall(0)
@@ -214,7 +213,7 @@ errands:
 				It("calls the api with correct arguments", func() {
 					command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
 
-					err := command.Execute([]string{"--config", fileName})
+					err := executeCommand(command, []string{"--config", fileName}, nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(service.CreateInstallationCallCount()).To(Equal(1))
@@ -263,7 +262,7 @@ errands:
 				It("returns an error", func() {
 					command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
 
-					err := command.Execute([]string{"--config", "filedoesnotexist"})
+					err := executeCommand(command, []string{"--config", "filedoesnotexist"}, nil)
 					Expect(err).To(MatchError("could not load config: open filedoesnotexist: no such file or directory"))
 				})
 			})
@@ -285,7 +284,7 @@ errands: lolololol
 				It("returns an error", func() {
 					command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
 
-					err := command.Execute([]string{"--config", fileName})
+					err := executeCommand(command, []string{"--config", fileName}, nil)
 					Expect(err.Error()).To(ContainSubstring("line 3: cannot unmarshal !!str `lolololol`"))
 				})
 			})
@@ -302,7 +301,7 @@ errands: lolololol
 
 			command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
 
-			err := command.Execute([]string{})
+			err := executeCommand(command, []string{}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(service.CreateInstallationCallCount()).To(Equal(0))
@@ -330,7 +329,7 @@ errands: lolololol
 
 			command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
 
-			err := command.Execute([]string{})
+			err := executeCommand(command, []string{}, nil)
 			Expect(err).To(MatchError("installation was unsuccessful"))
 		})
 
@@ -341,7 +340,7 @@ errands: lolololol
 
 					command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
 
-					err := command.Execute([]string{})
+					err := executeCommand(command, []string{}, nil)
 					Expect(err).To(MatchError("could not check for any already running installation: some error"))
 				})
 			})
@@ -353,7 +352,7 @@ errands: lolololol
 						service.InfoReturns(api.Info{Version: version}, nil)
 
 						command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
-						err := command.Execute([]string{"--product-name", "p-mysql"})
+						err := executeCommand(command, []string{"--product-name", "p-mysql"}, nil)
 						Expect(err).To(MatchError(fmt.Sprintf("--product-name is only available with Ops Manager 2.2 or later: you are running %s", version)))
 					}
 				})
@@ -365,7 +364,7 @@ errands: lolololol
 
 					command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
 
-					err := command.Execute([]string{})
+					err := executeCommand(command, []string{}, nil)
 					Expect(err).To(MatchError("installation failed to trigger: some error"))
 				})
 			})
@@ -380,7 +379,7 @@ errands: lolololol
 
 					command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
 
-					err := command.Execute([]string{})
+					err := executeCommand(command, []string{}, nil)
 					Expect(err).To(MatchError("installation failed to get status: another error"))
 				})
 			})
@@ -401,7 +400,7 @@ errands: lolololol
 
 					command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
 
-					err := command.Execute([]string{})
+					err := executeCommand(command, []string{}, nil)
 					Expect(err).To(MatchError("installation failed to get logs: no"))
 				})
 			})
@@ -424,21 +423,10 @@ errands: lolololol
 
 					command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
 
-					err := command.Execute([]string{})
+					err := executeCommand(command, []string{}, nil)
 					Expect(err).To(MatchError("installation failed to flush logs: yes"))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewApplyChanges(nil, nil, nil, nil, 1)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This authenticated command kicks off an install of any staged changes on the Ops Manager.",
-				ShortDescription: "triggers an install on the Ops Manager targeted",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

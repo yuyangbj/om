@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -36,10 +35,10 @@ var _ = Describe("StageProduct", func() {
 			},
 		}, nil)
 
-		err := command.Execute([]string{
+		err := executeCommand(command, []string{
 			"--product-name", "some-product",
 			"--product-version", "some-version",
-		})
+		}, nil)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(fakeService.ListDeployedProductsCallCount()).To(Equal(1))
@@ -76,10 +75,10 @@ var _ = Describe("StageProduct", func() {
 				},
 			}, nil)
 
-			err := command.Execute([]string{
+			err := executeCommand(command, []string{
 				"--product-name", "some-product",
 				"--product-version", "some-version",
-			})
+			}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.ListDeployedProductsCallCount()).To(Equal(1))
@@ -114,10 +113,10 @@ var _ = Describe("StageProduct", func() {
 
 			command := commands.NewStageProduct(fakeService, logger)
 
-			err := command.Execute([]string{
+			err := executeCommand(command, []string{
 				"--product-name", "some-product",
 				"--product-version", "some-version",
-			})
+			}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			format, v := logger.PrintfArgsForCall(0)
@@ -142,7 +141,7 @@ var _ = Describe("StageProduct", func() {
 		})
 		It("returns an error", func() {
 			command := commands.NewStageProduct(fakeService, logger)
-			err := command.Execute([]string{"--product-name", "cf", "--product-version", "some-version"})
+			err := executeCommand(command, []string{"--product-name", "cf", "--product-version", "some-version"}, nil)
 			Expect(err).To(MatchError("OpsManager does not allow configuration or staging changes while apply changes are running to prevent data loss for configuration and/or staging changes"))
 			Expect(fakeService.ListInstallationsCallCount()).To(Equal(1))
 		})
@@ -150,26 +149,26 @@ var _ = Describe("StageProduct", func() {
 
 	Context("failure cases", func() {
 		Context("when an unknown flag is provided", func() {
-			It("returns an error", func() {
+			FIt("returns an error", func() {
 				command := commands.NewStageProduct(fakeService, logger)
-				err := command.Execute([]string{"--badflag"})
-				Expect(err).To(MatchError("could not parse stage-product flags: flag provided but not defined: -badflag"))
+				err := executeCommand(command, []string{"--badflag"}, nil)
+				Expect(err).To(MatchError("unknown flag `badflag'"))
 			})
 		})
 
 		Context("when the product-name flag is not provided", func() {
 			It("returns an error", func() {
 				command := commands.NewStageProduct(fakeService, logger)
-				err := command.Execute([]string{"--product-version", "1.0"})
-				Expect(err).To(MatchError("could not parse stage-product flags: missing required flag \"--product-name\""))
+				err := executeCommand(command, []string{"--product-version", "1.0"}, nil)
+				Expect(err.Error()).To(MatchRegexp("the required flag.*--product-name"))
 			})
 		})
 
 		Context("when the product-version flag is not provided", func() {
 			It("returns an error", func() {
 				command := commands.NewStageProduct(fakeService, logger)
-				err := command.Execute([]string{"--product-name", "some-product"})
-				Expect(err).To(MatchError("could not parse stage-product flags: missing required flag \"--product-version\""))
+				err := executeCommand(command, []string{"--product-name", "some-product"}, nil)
+				Expect(err.Error()).To(MatchRegexp("the required flag.*--product-version"))
 			})
 		})
 
@@ -181,10 +180,10 @@ var _ = Describe("StageProduct", func() {
 			It("returns an error", func() {
 				command := commands.NewStageProduct(fakeService, logger)
 
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--product-name", "some-product",
 					"--product-version", "some-version",
-				})
+				}, nil)
 				Expect(err).To(MatchError(ContainSubstring("failed to stage product: cannot find product")))
 			})
 		})
@@ -197,10 +196,10 @@ var _ = Describe("StageProduct", func() {
 			It("returns an error", func() {
 				command := commands.NewStageProduct(fakeService, logger)
 
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--product-name", "some-product",
 					"--product-version", "some-version",
-				})
+				}, nil)
 				Expect(err).To(MatchError(ContainSubstring("failed to stage product: cannot check availability")))
 			})
 		})
@@ -211,7 +210,7 @@ var _ = Describe("StageProduct", func() {
 				fakeService.CheckProductAvailabilityReturns(true, nil)
 				fakeService.StageReturns(errors.New("some product error"))
 
-				err := command.Execute([]string{"--product-name", "some-product", "--product-version", "some-version"})
+				err := executeCommand(command, []string{"--product-name", "some-product", "--product-version", "some-version"}, nil)
 				Expect(err).To(MatchError("failed to stage product: some product error"))
 			})
 		})
@@ -222,7 +221,7 @@ var _ = Describe("StageProduct", func() {
 				fakeService.CheckProductAvailabilityReturns(true, nil)
 				fakeService.GetDiagnosticReportReturns(api.DiagnosticReport{}, errors.New("bad diagnostic report"))
 
-				err := command.Execute([]string{"--product-name", "some-product", "--product-version", "some-version"})
+				err := executeCommand(command, []string{"--product-name", "some-product", "--product-version", "some-version"}, nil)
 				Expect(err).To(MatchError("failed to stage product: bad diagnostic report"))
 			})
 		})
@@ -237,24 +236,13 @@ var _ = Describe("StageProduct", func() {
 			It("returns an error", func() {
 				command := commands.NewStageProduct(fakeService, logger)
 
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--product-name", "some-product",
 					"--product-version", "some-version",
-				})
+				}, nil)
 				Expect(err).To(MatchError(ContainSubstring("failed to stage product: could not fetch deployed products")))
 			})
 		})
 
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewStageProduct(nil, nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This command attempts to stage a product in the Ops Manager",
-				ShortDescription: "stages a given product in the Ops Manager targeted",
-				Flags:            command.Options,
-			}))
-		})
 	})
 })

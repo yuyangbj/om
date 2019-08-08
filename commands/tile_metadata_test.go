@@ -9,7 +9,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf/jhanda"
+
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
 )
@@ -17,7 +17,7 @@ import (
 var _ = Describe("TileMetadata", func() {
 	Describe("Execute", func() {
 		var (
-			command commands.TileMetadata
+			command *commands.TileMetadata
 			stdout  *fakes.Logger
 
 			productFile *os.File
@@ -57,11 +57,11 @@ product_version: 1.2.3
 		})
 
 		It("shows product name from tile metadata file", func() {
-			err = command.Execute([]string{
+			err = executeCommand(command, []string{
 				"-p",
 				productFile.Name(),
 				"--product-name",
-			})
+			}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			content := stdout.PrintlnArgsForCall(0)
@@ -69,11 +69,11 @@ product_version: 1.2.3
 		})
 
 		It("shows product version from tile metadata file", func() {
-			err = command.Execute([]string{
+			err = executeCommand(command, []string{
 				"-p",
 				productFile.Name(),
 				"--product-version",
-			})
+			}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			content := stdout.PrintlnArgsForCall(0)
@@ -83,21 +83,21 @@ product_version: 1.2.3
 		Context("failure cases", func() {
 			Context("when the flags cannot be parsed", func() {
 				It("returns an error", func() {
-					err = command.Execute([]string{"--bad-flag", "some-value"})
+					err = executeCommand(command, []string{"--bad-flag", "some-value"}, nil)
 					Expect(err).To(MatchError(MatchRegexp("could not parse tile-metadata flags")))
 				})
 			})
 
 			Context("when the flags are not specified", func() {
 				It("returns an error", func() {
-					err = command.Execute([]string{"-p", productFile.Name()})
+					err = executeCommand(command, []string{"-p", productFile.Name()}, nil)
 					Expect(err).To(MatchError(MatchRegexp("you must specify product-name and/or product-version")))
 				})
 			})
 
 			Context("when the specified product file is not found", func() {
 				It("returns an error", func() {
-					err = command.Execute([]string{"-p", "non-existent-file", "--product-name"})
+					err = executeCommand(command, []string{"-p", "non-existent-file", "--product-name"}, nil)
 					Expect(err).To(MatchError(MatchRegexp("failed to open product file")))
 				})
 			})
@@ -119,21 +119,10 @@ product_version: 1.2.3
 				})
 
 				It("returns an error", func() {
-					err = command.Execute([]string{"-p", badTile.Name(), "--product-name"})
+					err = executeCommand(command, []string{"-p", badTile.Name(), "--product-name"}, nil)
 					Expect(err).To(MatchError(MatchRegexp("failed to find metadata file")))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns the usage information for the tile-metadata command", func() {
-			command := commands.TileMetadata{}
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This command prints metadata about the given tile",
-				ShortDescription: "prints tile metadata",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

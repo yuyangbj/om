@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -43,12 +42,12 @@ var _ = Describe("ConfigureAuthentication", func() {
 			}
 
 			command := commands.NewConfigureAuthentication(service, logger)
-			err := command.Execute([]string{
+			err := executeCommand(command, []string{
 				"--username", "some-username",
 				"--password", "some-password",
 				"--decryption-passphrase", "some-passphrase",
 				"--precreated-client-secret", "test-client-secret",
-			})
+			}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(service.SetupArgsForCall(0)).To(Equal(api.SetupInput{
@@ -87,11 +86,11 @@ It will have the username 'precreated-client' and the client secret you provided
 				}, nil)
 
 				command := commands.NewConfigureAuthentication(service, logger)
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--username", "some-username",
 					"--password", "some-password",
 					"--decryption-passphrase", "some-passphrase",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.EnsureAvailabilityCallCount()).To(Equal(1))
@@ -132,9 +131,9 @@ decryption-passphrase: some-passphrase
 				}
 
 				command := commands.NewConfigureAuthentication(service, logger)
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--config", configFile.Name(),
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.SetupArgsForCall(0)).To(Equal(api.SetupInput{
@@ -172,10 +171,10 @@ decryption-passphrase: some-passphrase
 				}
 
 				command := commands.NewConfigureAuthentication(service, logger)
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--config", configFile.Name(),
 					"--password", "some-password-1",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.SetupArgsForCall(0)).To(Equal(api.SetupInput{
@@ -219,12 +218,12 @@ decryption-passphrase: some-passphrase
 				}, nil)
 
 				command := commands.NewConfigureAuthentication(service, logger)
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--username", "some-username",
 					"--password", "some-password",
 					"--decryption-passphrase", "some-passphrase",
 					"--precreated-client-secret", "test-client-secret",
-				})
+				}, nil)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring(`
 Cannot use the "--precreated-client-secret" argument.
@@ -237,16 +236,16 @@ This is only supported in OpsManager 2.5 and up.
 			Context("when an unknown flag is provided", func() {
 				It("returns an error", func() {
 					command := commands.NewConfigureAuthentication(service, logger)
-					err := command.Execute([]string{"--banana"})
-					Expect(err).To(MatchError("could not parse configure-authentication flags: flag provided but not defined: -banana"))
+					err := executeCommand(command, []string{"--banana"}, nil)
+					Expect(err).To(MatchError("unknown flag `banana'"))
 				})
 			})
 
 			Context("when config file cannot be opened", func() {
 				It("returns an error", func() {
 					command := commands.NewConfigureAuthentication(service, logger)
-					err := command.Execute([]string{"--config", "something"})
-					Expect(err).To(MatchError("could not parse configure-authentication flags: could not load the config file: could not read file (something): open something: no such file or directory"))
+					err := executeCommand(command, []string{"--config", "something"}, nil)
+					Expect(err).To(MatchError("could not load the config file: could not read file (something): open something: no such file or directory"))
 
 				})
 			})
@@ -256,11 +255,11 @@ This is only supported in OpsManager 2.5 and up.
 					service.EnsureAvailabilityReturns(api.EnsureAvailabilityOutput{}, errors.New("failed to fetch status"))
 
 					command := commands.NewConfigureAuthentication(service, logger)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--username", "some-username",
 						"--password", "some-password",
 						"--decryption-passphrase", "some-passphrase",
-					})
+					}, nil)
 					Expect(err).To(MatchError("could not determine initial configuration status: failed to fetch status"))
 				})
 			})
@@ -272,11 +271,11 @@ This is only supported in OpsManager 2.5 and up.
 					}, nil)
 
 					command := commands.NewConfigureAuthentication(service, logger)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--username", "some-username",
 						"--password", "some-password",
 						"--decryption-passphrase", "some-passphrase",
-					})
+					}, nil)
 					Expect(err).To(MatchError("could not determine initial configuration status: received unexpected status"))
 				})
 			})
@@ -290,11 +289,11 @@ This is only supported in OpsManager 2.5 and up.
 					service.SetupReturns(api.SetupOutput{}, errors.New("could not setup"))
 
 					command := commands.NewConfigureAuthentication(service, logger)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--username", "some-username",
 						"--password", "some-password",
 						"--decryption-passphrase", "some-passphrase",
-					})
+					}, nil)
 					Expect(err).To(MatchError("could not configure authentication: could not setup"))
 				})
 			})
@@ -315,11 +314,11 @@ This is only supported in OpsManager 2.5 and up.
 					}
 
 					command := commands.NewConfigureAuthentication(service, logger)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--username", "some-username",
 						"--password", "some-password",
 						"--decryption-passphrase", "some-passphrase",
-					})
+					}, nil)
 					Expect(err).To(MatchError("could not determine final configuration status: failed to fetch status"))
 				})
 			})
@@ -327,46 +326,35 @@ This is only supported in OpsManager 2.5 and up.
 			Context("when the --username flag is missing", func() {
 				It("returns an error", func() {
 					command := commands.NewConfigureAuthentication(nil, nil)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--password", "some-password",
 						"--decryption-passphrase", "some-passphrase",
-					})
-					Expect(err).To(MatchError("could not parse configure-authentication flags: missing required flag \"--username\""))
+					}, nil)
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--username"))
 				})
 			})
 
 			Context("when the --password flag is missing", func() {
 				It("returns an error", func() {
 					command := commands.NewConfigureAuthentication(nil, nil)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--username", "some-username",
 						"--decryption-passphrase", "some-passphrase",
-					})
-					Expect(err).To(MatchError("could not parse configure-authentication flags: missing required flag \"--password\""))
+					}, nil)
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--password"))
 				})
 			})
 
 			Context("when the --decryption-passphrase flag is missing", func() {
 				It("returns an error", func() {
 					command := commands.NewConfigureAuthentication(nil, nil)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--username", "some-username",
 						"--password", "some-password",
-					})
-					Expect(err).To(MatchError("could not parse configure-authentication flags: missing required flag \"--decryption-passphrase\""))
+					}, nil)
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--decryption-passphrase"))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewConfigureAuthentication(nil, nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This unauthenticated command helps setup the internal userstore authentication mechanism for your Ops Manager.",
-				ShortDescription: "configures Ops Manager with an internal userstore and admin user account",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

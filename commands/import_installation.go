@@ -3,7 +3,6 @@ package commands
 import (
 	"archive/zip"
 	"fmt"
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"os"
 	"strings"
@@ -20,7 +19,7 @@ type ImportInstallation struct {
 	Options    struct {
 		ConfigFile      string `long:"config"                short:"c"                  description:"path to yml file for configuration (keys must match the following command line flags)"`
 		Installation    string `long:"installation"          short:"i"  required:"true" description:"path to installation."`
-		PollingInterval int    `long:"polling-interval"      short:"pi"                 description:"interval (in seconds) to check OpsManager availability" default:"10"`
+		PollingInterval int    `long:"polling-interval"      short:"p"                 description:"interval (in seconds) to check OpsManager availability" default:"10"`
 	}
 }
 
@@ -36,14 +35,6 @@ func NewImportInstallation(multipart multipart, service importInstallationServic
 		logger:     logger,
 		service:    service,
 		passphrase: passphrase,
-	}
-}
-
-func (ii ImportInstallation) Usage() jhanda.Usage {
-	return jhanda.Usage{
-		Description:      "This unauthenticated command attempts to import an installation to the Ops Manager targeted.",
-		ShortDescription: "imports a given installation to the Ops Manager targeted",
-		Flags:            ii.Options,
 	}
 }
 
@@ -127,11 +118,6 @@ func (ii ImportInstallation) ensureAvailability() error {
 func (ii *ImportInstallation) validate(args []string) error {
 	if ii.passphrase == "" {
 		return fmt.Errorf("the global decryption-passphrase argument is required for this command")
-	}
-
-	err := loadConfigFile(args, &ii.Options, nil)
-	if err != nil {
-		return fmt.Errorf("could not parse import-installation flags: %s", err)
 	}
 
 	if _, err := os.Stat(ii.Options.Installation); err != nil {

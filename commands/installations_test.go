@@ -6,7 +6,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf/jhanda"
+
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -26,7 +26,7 @@ func parseTime(timeString string) *time.Time {
 
 var _ = Describe("Installations", func() {
 	var (
-		command       commands.Installations
+		command       *commands.Installations
 		fakeService   *fakes.InstallationsService
 		fakePresenter *presenterfakes.FormattedPresenter
 	)
@@ -57,7 +57,7 @@ var _ = Describe("Installations", func() {
 		})
 
 		It("lists recent installations as a table", func() {
-			err := command.Execute([]string{})
+			err := executeCommand(command, []string{}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakePresenter.PresentInstallationsCallCount()).To(Equal(1))
@@ -80,7 +80,7 @@ var _ = Describe("Installations", func() {
 
 		Context("when the format flag is provided", func() {
 			It("sets the format on the presenter", func() {
-				err := command.Execute([]string{"--format", "json"})
+				err := executeCommand(command, []string{"--format", "json"}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakePresenter.SetFormatCallCount()).To(Equal(1))
@@ -91,8 +91,8 @@ var _ = Describe("Installations", func() {
 		Context("Failure cases", func() {
 			Context("when an unknown flag is passed", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{"--unknown-flag"})
-					Expect(err).To(MatchError("could not parse installations flags: flag provided but not defined: -unknown-flag"))
+					err := executeCommand(command, []string{"--unknown-flag"}, nil)
+					Expect(err).To(MatchError("unknown flag `unknown-flag'"))
 				})
 			})
 
@@ -100,21 +100,10 @@ var _ = Describe("Installations", func() {
 				It("returns an error", func() {
 					fakeService.ListInstallationsReturns([]api.InstallationsServiceOutput{}, errors.New("failed to retrieve installations"))
 
-					err := command.Execute([]string{})
+					err := executeCommand(command, []string{}, nil)
 					Expect(err).To(MatchError("failed to retrieve installations"))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewInstallations(nil, nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This authenticated command lists all recent installation events.",
-				ShortDescription: "list recent installation events",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

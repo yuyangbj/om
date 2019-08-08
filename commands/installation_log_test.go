@@ -5,7 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf/jhanda"
+
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -13,7 +13,7 @@ import (
 
 var _ = Describe("InstallationLog", func() {
 	var (
-		command     commands.InstallationLog
+		command     *commands.InstallationLog
 		fakeService *fakes.InstallationLogService
 		logger      *fakes.Logger
 	)
@@ -27,9 +27,9 @@ var _ = Describe("InstallationLog", func() {
 	Describe("Execute", func() {
 		It("displays the logs for the specified installation", func() {
 			fakeService.GetInstallationLogsReturns(api.InstallationsServiceOutput{Logs: "some log output"}, nil)
-			err := command.Execute([]string{
+			err := executeCommand(command, []string{
 				"--id", "999",
-			})
+			}, nil)
 
 			Expect(err).NotTo(HaveOccurred())
 
@@ -45,14 +45,14 @@ var _ = Describe("InstallationLog", func() {
 		Context("Failure cases", func() {
 			Context("when an unknown flag is provided", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{"--since", "yesterday"})
-					Expect(err).To(MatchError("could not parse installation-log flags: flag provided but not defined: -since"))
+					err := executeCommand(command, []string{"--since", "yesterday"}, nil)
+					Expect(err).To(MatchError("unknown flag `since'"))
 				})
 			})
 			Context("when the installation id is not provided", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{})
-					Expect(err).To(MatchError("could not parse installation-log flags: missing required flag \"--id\""))
+					err := executeCommand(command, []string{}, nil)
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--id"))
 				})
 			})
 			Context("when the api fails to retrieve the installation log", func() {
@@ -61,21 +61,10 @@ var _ = Describe("InstallationLog", func() {
 						api.InstallationsServiceOutput{},
 						errors.New("failed to retrieve installation log"),
 					)
-					err := command.Execute([]string{"--id", "999"})
+					err := executeCommand(command, []string{"--id", "999"}, nil)
 					Expect(err).To(MatchError("failed to retrieve installation log"))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewInstallationLog(nil, nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This authenticated command retrieves the logs for a given installation.",
-				ShortDescription: "output installation logs",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

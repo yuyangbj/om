@@ -3,7 +3,7 @@ package commands_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf/jhanda"
+
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
 	"io/ioutil"
@@ -26,7 +26,7 @@ var opsFileParameter = `- type: replace
 
 var _ = Describe("Interpolate", func() {
 	var (
-		command commands.Interpolate
+		command *commands.Interpolate
 		logger  *fakes.Logger
 	)
 
@@ -80,9 +80,9 @@ var _ = Describe("Interpolate", func() {
 			It("succeeds", func() {
 				err := ioutil.WriteFile(inputFile, []byte(templateNoParameters), 0755)
 				Expect(err).NotTo(HaveOccurred())
-				err = command.Execute([]string{
+				err = executeCommand(command, []string{
 					"--config", inputFile,
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				content := logger.PrintlnArgsForCall(0)
@@ -92,9 +92,9 @@ var _ = Describe("Interpolate", func() {
 			It("fails when all parameters are not specified", func() {
 				err := ioutil.WriteFile(inputFile, []byte(templateWithParameters), 0755)
 				Expect(err).NotTo(HaveOccurred())
-				err = command.Execute([]string{
+				err = executeCommand(command, []string{
 					"--config", inputFile,
-				})
+				}, nil)
 				Expect(err).To(HaveOccurred())
 				splitErr := strings.Split(err.Error(), "\n")
 				Expect(splitErr).To(ConsistOf("Expected to find variables:", "hello"))
@@ -107,10 +107,10 @@ var _ = Describe("Interpolate", func() {
 				Expect(err).NotTo(HaveOccurred())
 				err = ioutil.WriteFile(varsFile, []byte(varsFileParameter), 0755)
 				Expect(err).NotTo(HaveOccurred())
-				err = command.Execute([]string{
+				err = executeCommand(command, []string{
 					"--config", inputFile,
 					"--vars-file", varsFile,
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				content := logger.PrintlnArgsForCall(0)
@@ -124,11 +124,11 @@ var _ = Describe("Interpolate", func() {
 				Expect(err).NotTo(HaveOccurred())
 				err = ioutil.WriteFile(varsFile2, []byte(varsFileParameter2), 0755)
 				Expect(err).NotTo(HaveOccurred())
-				err = command.Execute([]string{
+				err = executeCommand(command, []string{
 					"--config", inputFile,
 					"--vars-file", varsFile,
 					"--vars-file", varsFile2,
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				content := logger.PrintlnArgsForCall(0)
@@ -140,10 +140,10 @@ var _ = Describe("Interpolate", func() {
 			It("succeeds", func() {
 				err := ioutil.WriteFile(inputFile, []byte(templateWithParameters), 0755)
 				Expect(err).NotTo(HaveOccurred())
-				err = command.Execute([]string{
+				err = executeCommand(command, []string{
 					"--config", inputFile,
 					"--var", "hello=world",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				content := logger.PrintlnArgsForCall(0)
@@ -153,11 +153,11 @@ var _ = Describe("Interpolate", func() {
 			It("succeeds with multiple vars inputs", func() {
 				err := ioutil.WriteFile(inputFile, []byte(templateWithMultipleParameters), 0755)
 				Expect(err).NotTo(HaveOccurred())
-				err = command.Execute([]string{
+				err = executeCommand(command, []string{
 					"--config", inputFile,
 					"--var", "hello=world",
 					"--var", "world=hello",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				content := logger.PrintlnArgsForCall(0)
@@ -167,12 +167,12 @@ var _ = Describe("Interpolate", func() {
 			It("takes the last value if there are duplicate vars", func() {
 				err := ioutil.WriteFile(inputFile, []byte(templateWithMultipleParameters), 0755)
 				Expect(err).NotTo(HaveOccurred())
-				err = command.Execute([]string{
+				err = executeCommand(command, []string{
 					"--config", inputFile,
 					"--var", "hello=world",
 					"--var", "world=hello",
 					"--var", "hello=otherWorld",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				content := logger.PrintlnArgsForCall(0)
@@ -186,10 +186,10 @@ var _ = Describe("Interpolate", func() {
 				Expect(err).NotTo(HaveOccurred())
 				err = ioutil.WriteFile(opsFile, []byte(opsFileParameter), 0755)
 				Expect(err).NotTo(HaveOccurred())
-				err = command.Execute([]string{
+				err = executeCommand(command, []string{
 					"--config", inputFile,
 					"--ops-file", opsFile,
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				content := logger.PrintlnArgsForCall(0)
@@ -204,11 +204,11 @@ hello: world`))
 				Expect(err).NotTo(HaveOccurred())
 				err = ioutil.WriteFile(varsFile, []byte(`{"interpolated-value": "b"}`), 0755)
 				Expect(err).NotTo(HaveOccurred())
-				err = command.Execute([]string{
+				err = executeCommand(command, []string{
 					"--config", inputFile,
 					"--vars-file", varsFile,
 					"--path", "/a",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				content := logger.PrintlnArgsForCall(0)
@@ -221,10 +221,10 @@ hello: world`))
 				It("succeeds", func() {
 					err := ioutil.WriteFile(inputFile, []byte(templateWithParameters), 0755)
 					Expect(err).NotTo(HaveOccurred())
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--config", inputFile,
 						"--skip-missing",
-					})
+					}, nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					content := logger.PrintlnArgsForCall(0)
@@ -235,21 +235,10 @@ hello: world`))
 
 		When("no flags are set and no stdin provided", func() {
 			It("errors", func() {
-				err := command.Execute([]string{})
+				err := executeCommand(command, []string{}, nil)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("no file or STDIN input provided."))
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewInterpolate(os.Environ, nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "Interpolates variables into a manifest",
-				ShortDescription: "Interpolates variables into a manifest",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

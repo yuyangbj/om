@@ -3,7 +3,6 @@ package commands
 import (
 	"fmt"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 )
 
@@ -25,18 +24,14 @@ type stageProductService interface {
 	Stage(api.StageProductInput, string) error
 }
 
-func NewStageProduct(service stageProductService, logger logger) StageProduct {
-	return StageProduct{
+func NewStageProduct(service stageProductService, logger logger) *StageProduct {
+	return &StageProduct{
 		logger:  logger,
 		service: service,
 	}
 }
 
 func (sp StageProduct) Execute(args []string) error {
-	if _, err := jhanda.Parse(&sp.Options, args); err != nil {
-		return fmt.Errorf("could not parse stage-product flags: %s", err)
-	}
-
 	err := checkRunningInstallation(sp.service.ListInstallations)
 	if err != nil {
 		return err
@@ -88,12 +83,4 @@ func (sp StageProduct) Execute(args []string) error {
 	sp.logger.Printf("finished staging")
 
 	return nil
-}
-
-func (sp StageProduct) Usage() jhanda.Usage {
-	return jhanda.Usage{
-		Description:      "This command attempts to stage a product in the Ops Manager",
-		ShortDescription: "stages a given product in the Ops Manager targeted",
-		Flags:            sp.Options,
-	}
 }

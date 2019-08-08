@@ -1,9 +1,6 @@
 package commands
 
 import (
-	"fmt"
-
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 )
 
@@ -21,15 +18,11 @@ type updateSSLCertificateService interface {
 	UpdateSSLCertificate(api.SSLCertificateInput) error
 }
 
-func NewUpdateSSLCertificate(service updateSSLCertificateService, logger logger) UpdateSSLCertificate {
-	return UpdateSSLCertificate{service: service, logger: logger}
+func NewUpdateSSLCertificate(service updateSSLCertificateService, logger logger) *UpdateSSLCertificate {
+	return &UpdateSSLCertificate{service: service, logger: logger}
 }
 
 func (c UpdateSSLCertificate) Execute(args []string) error {
-	if _, err := jhanda.Parse(&c.Options, args); err != nil {
-		return fmt.Errorf("could not parse update-ssl-certificate flags: %s", err)
-	}
-
 	err := c.service.UpdateSSLCertificate(api.SSLCertificateInput{
 		CertPem:       c.Options.CertPem,
 		PrivateKeyPem: c.Options.PrivateKey,
@@ -42,12 +35,4 @@ func (c UpdateSSLCertificate) Execute(args []string) error {
 	c.logger.Printf("Please allow about 1 min for the new certificate to take effect.\n")
 
 	return nil
-}
-
-func (c UpdateSSLCertificate) Usage() jhanda.Usage {
-	return jhanda.Usage{
-		Description:      "This authenticated command updates the SSL Certificate on the Ops Manager with the given cert and key",
-		ShortDescription: "updates the SSL Certificate on the Ops Manager",
-		Flags:            c.Options,
-	}
 }

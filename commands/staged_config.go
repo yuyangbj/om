@@ -5,7 +5,6 @@ import (
 
 	"strings"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/config"
 	"github.com/pivotal-cf/om/configparser"
@@ -35,26 +34,14 @@ type stagedConfigService interface {
 	GetStagedProductJobMaxInFlight(productGUID string) (map[string]interface{}, error)
 }
 
-func NewStagedConfig(service stagedConfigService, logger logger) StagedConfig {
-	return StagedConfig{
+func NewStagedConfig(service stagedConfigService, logger logger) *StagedConfig {
+	return &StagedConfig{
 		service: service,
 		logger:  logger,
 	}
 }
 
-func (ec StagedConfig) Usage() jhanda.Usage {
-	return jhanda.Usage{
-		Description:      "This command generates a config from a staged product that can be passed in to om configure-product (Note: credentials are not available and will appear as '***')",
-		ShortDescription: "**EXPERIMENTAL** generates a config from a staged product",
-		Flags:            ec.Options,
-	}
-}
-
 func (ec StagedConfig) Execute(args []string) error {
-	if _, err := jhanda.Parse(&ec.Options, args); err != nil {
-		return fmt.Errorf("could not parse staged-config flags: %s", err)
-	}
-
 	if ec.Options.IncludeCredentials {
 		deployedProducts, err := ec.service.ListDeployedProducts()
 		if err != nil {

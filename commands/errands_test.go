@@ -3,7 +3,6 @@ package commands_test
 import (
 	"errors"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -18,7 +17,7 @@ var _ = Describe("Errands", func() {
 	var (
 		fakePresenter *presenterfakes.FormattedPresenter
 		fakeService   *fakes.ErrandsService
-		command       commands.Errands
+		command       *commands.Errands
 	)
 
 	BeforeEach(func() {
@@ -48,7 +47,7 @@ var _ = Describe("Errands", func() {
 		})
 
 		It("lists the available products", func() {
-			err := command.Execute([]string{"--product-name", "some-product-name"})
+			err := executeCommand(command, []string{"--product-name", "some-product-name"}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.GetStagedProductByNameCallCount()).To(Equal(1))
@@ -71,10 +70,10 @@ var _ = Describe("Errands", func() {
 
 		Context("when the format flag is provided", func() {
 			It("sets the format on the presenter", func() {
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--product-name", "some-product-name",
 					"--format", "json",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakePresenter.SetFormatCallCount()).To(Equal(1))
@@ -85,15 +84,15 @@ var _ = Describe("Errands", func() {
 		Context("failure cases", func() {
 			Context("when an unknown flag is passed", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{"--unknown-flag"})
-					Expect(err).To(MatchError("could not parse errands flags: flag provided but not defined: -unknown-flag"))
+					err := executeCommand(command, []string{"--unknown-flag"}, nil)
+					Expect(err).To(MatchError("unknown flag `unknown-flag'"))
 				})
 			})
 
 			Context("when the staged products finder fails", func() {
 				It("returns an error", func() {
 					fakeService.GetStagedProductByNameReturns(api.StagedProductsFindOutput{}, errors.New("there was an error"))
-					err := command.Execute([]string{"--product-name", "some-product"})
+					err := executeCommand(command, []string{"--product-name", "some-product"}, nil)
 					Expect(err).To(MatchError("failed to find staged product \"some-product\": there was an error"))
 				})
 			})
@@ -101,28 +100,17 @@ var _ = Describe("Errands", func() {
 			Context("when the errands service fails", func() {
 				It("returns an error", func() {
 					fakeService.ListStagedProductErrandsReturns(api.ErrandsListOutput{}, errors.New("there was an error"))
-					err := command.Execute([]string{"--product-name", "some-product"})
+					err := executeCommand(command, []string{"--product-name", "some-product"}, nil)
 					Expect(err).To(MatchError("failed to list errands: there was an error"))
 				})
 			})
 
 			Context("when the product name is missing", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{})
-					Expect(err).To(MatchError("could not parse errands flags: missing required flag \"--product-name\""))
+					err := executeCommand(command, []string{}, nil)
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--product-name"))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewErrands(nil, nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This authenticated command lists all errands for a product.",
-				ShortDescription: "list errands for a product",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

@@ -8,7 +8,6 @@ import (
 
 	"regexp"
 
-	"github.com/pivotal-cf/jhanda"
 	"gopkg.in/yaml.v2"
 )
 
@@ -21,15 +20,11 @@ type TileMetadata struct {
 	}
 }
 
-func NewTileMetadata(stdout logger) TileMetadata {
-	return TileMetadata{stdout: stdout}
+func NewTileMetadata(stdout logger) *TileMetadata {
+	return &TileMetadata{stdout: stdout}
 }
 
 func (t TileMetadata) Execute(args []string) error {
-	if _, err := jhanda.Parse(&t.Options, args); err != nil {
-		return fmt.Errorf("could not parse tile-metadata flags: %s", err)
-	}
-
 	if !t.Options.ProductName && !t.Options.ProductVersion {
 		return errors.New("you must specify product-name and/or product-version")
 	}
@@ -48,14 +43,6 @@ func (t TileMetadata) Execute(args []string) error {
 	}
 
 	return nil
-}
-
-func (t TileMetadata) Usage() jhanda.Usage {
-	return jhanda.Usage{
-		Description:      "This command prints metadata about the given tile",
-		ShortDescription: "prints tile metadata",
-		Flags:            t.Options,
-	}
 }
 
 type metadataPayload struct {

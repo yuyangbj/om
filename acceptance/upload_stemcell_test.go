@@ -67,7 +67,7 @@ func (t *UploadStemcellTestServer) ServeHTTP(w http.ResponseWriter, req *http.Re
 	Expect(err).ToNot(HaveOccurred())
 }
 
-var _ = FDescribe("upload-stemcell command", func() {
+var _ = Describe("upload-stemcell command", func() {
 	var stemcellName string
 
 	createStemcell := func(filename string) string {

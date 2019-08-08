@@ -3,7 +3,6 @@ package commands_test
 import (
 	"errors"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -14,7 +13,7 @@ import (
 
 var _ = Describe("DeleteProduct", func() {
 	var (
-		command     commands.DeleteProduct
+		command     *commands.DeleteProduct
 		fakeService *fakes.DeleteProductService
 	)
 
@@ -25,7 +24,7 @@ var _ = Describe("DeleteProduct", func() {
 
 	Describe("Execute", func() {
 		It("deletes the specific product", func() {
-			err := command.Execute([]string{"-p", "some-product-name", "-v", "1.2.3-build.4"})
+			err := executeCommand(command, []string{"-p", "some-product-name", "-v", "1.2.3-build.4"}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.DeleteAvailableProductsCallCount()).To(Equal(1))
@@ -43,39 +42,28 @@ var _ = Describe("DeleteProduct", func() {
 				It("returns an error", func() {
 					fakeService.DeleteAvailableProductsReturns(errors.New("something bad happened"))
 
-					err := command.Execute([]string{"-p", "nah", "-v", "nope"})
+					err := executeCommand(command, []string{"-p", "nah", "-v", "nope"}, nil)
 					Expect(err).To(MatchError("something bad happened"))
 				})
 			})
 
 			Context("when the --product-name flag is missing", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-version", "1.2.3",
-					})
-					Expect(err).To(MatchError("could not parse delete-product flags: missing required flag \"--product-name\""))
+					}, nil)
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--product-name"))
 				})
 			})
 
 			Context("when the --product-version flag is missing", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
-					})
-					Expect(err).To(MatchError("could not parse delete-product flags: missing required flag \"--product-version\""))
+					}, nil)
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--product-version"))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns the usage", func() {
-			usage := command.Usage()
-			Expect(usage).To(Equal(jhanda.Usage{
-				Description:      "This command deletes the named product from the targeted Ops Manager",
-				ShortDescription: "deletes a product from the Ops Manager",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

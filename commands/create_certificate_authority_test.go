@@ -5,7 +5,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -16,7 +15,7 @@ var _ = Describe("CreateCertificateAuthority", func() {
 	var (
 		fakePresenter *presenterfakes.FormattedPresenter
 		fakeService   *fakes.CreateCertificateAuthorityService
-		command       commands.CreateCertificateAuthority
+		command       *commands.CreateCertificateAuthority
 	)
 
 	BeforeEach(func() {
@@ -27,10 +26,10 @@ var _ = Describe("CreateCertificateAuthority", func() {
 
 	Describe("Execute", func() {
 		It("makes a request to the Opsman to create a certificate authority", func() {
-			err := command.Execute([]string{
+			err := executeCommand(command, []string{
 				"--certificate-pem", "some CertPem",
 				"--private-key-pem", "some PrivateKey",
-			})
+			}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.CreateCertificateAuthorityCallCount()).To(Equal(1))
@@ -52,10 +51,10 @@ var _ = Describe("CreateCertificateAuthority", func() {
 
 			fakeService.CreateCertificateAuthorityReturns(ca, nil)
 
-			err := command.Execute([]string{
+			err := executeCommand(command, []string{
 				"--certificate-pem", "some CertPem",
 				"--private-key-pem", "some PrivateKey",
-			})
+			}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakePresenter.PresentCertificateAuthorityCallCount()).To(Equal(1))
@@ -64,11 +63,11 @@ var _ = Describe("CreateCertificateAuthority", func() {
 
 		Context("when the format flag is provided", func() {
 			It("sets the format on the presenter", func() {
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--format", "json",
 					"--certificate-pem", "some CertPem",
 					"--private-key-pem", "some PrivateKey",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakePresenter.SetFormatCallCount()).To(Equal(1))
@@ -81,49 +80,38 @@ var _ = Describe("CreateCertificateAuthority", func() {
 				It("returns an error", func() {
 					fakeService.CreateCertificateAuthorityReturns(api.CA{}, errors.New("failed to create certificate"))
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--certificate-pem", "some CertPem",
 						"--private-key-pem", "some PrivateKey",
-					})
+					}, nil)
 					Expect(err).To(MatchError("failed to create certificate"))
 				})
 			})
 
 			Context("when an unknown flag is provided", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{"--badflag"})
-					Expect(err).To(MatchError("could not parse create-certificate-authority flags: flag provided but not defined: -badflag"))
+					err := executeCommand(command, []string{"--badflag"}, nil)
+					Expect(err).To(MatchError("unknown flag `badflag'"))
 				})
 			})
 
 			Context("when the certificate flag is not provided", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--private-key-pem", "some PrivateKey",
-					})
-					Expect(err).To(MatchError("could not parse create-certificate-authority flags: missing required flag \"--certificate-pem\""))
+					}, nil)
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--certificate-pem"))
 				})
 			})
 
 			Context("when the private key flag is not provided", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--certificate-pem", "some CertPem",
-					})
-					Expect(err).To(MatchError("could not parse create-certificate-authority flags: missing required flag \"--private-key-pem\""))
+					}, nil)
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--private-key-pem"))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage info", func() {
-			usage := command.Usage()
-			Expect(usage).To(Equal(jhanda.Usage{
-				Description:      "This authenticated command creates a certificate authority on the Ops Manager with the given cert and key",
-				ShortDescription: "creates a certificate authority on the Ops Manager",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

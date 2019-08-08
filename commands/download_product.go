@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-version"
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/validator"
 )
 
@@ -90,21 +89,8 @@ func NewDownloadProduct(
 	}
 }
 
-func (c DownloadProduct) Usage() jhanda.Usage {
-	return jhanda.Usage{
-		Description:      "This command attempts to download a single product file from Pivotal Network. The API token used must be associated with a user account that has already accepted the EULA for the specified product",
-		ShortDescription: "downloads a specified product file from Pivotal Network",
-		Flags:            c.Options,
-	}
-}
-
 func (c *DownloadProduct) Execute(args []string) error {
-	err := loadConfigFile(args, &c.Options, c.environFunc)
-	if err != nil {
-		return fmt.Errorf("could not parse download-product flags: %s", err)
-	}
-
-	err = c.validate()
+	err := c.validate()
 	if err != nil {
 		return err
 	}
@@ -229,7 +215,7 @@ func (c *DownloadProduct) validate() error {
 		return fmt.Errorf("no version information provided; please provide either --product-version or --product-version-regex")
 	}
 	if c.Options.PivnetToken == "" && c.Options.Source == "" {
-		return fmt.Errorf(`could not execute "download-product": could not parse download-product flags: missing required flag "--pivnet-api-token"`)
+		return fmt.Errorf("the required flag `--pivnet-api-token' was not specified")
 	}
 
 	return nil

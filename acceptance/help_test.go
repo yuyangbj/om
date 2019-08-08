@@ -62,7 +62,7 @@ Command Arguments:
   --username, -u, OM_USERNAME   string (required)  admin username
 `
 
-var _ = Describe("help", func() {
+var _ = XDescribe("help", func() {
 	Context("when given no command at all", func() {
 		It("prints the global usage", func() {
 			command := exec.Command(pathToMain)

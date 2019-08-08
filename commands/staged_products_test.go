@@ -5,7 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf/jhanda"
+
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -16,7 +16,7 @@ var _ = Describe("StagedProducts", func() {
 	var (
 		presenter   *presenterfakes.FormattedPresenter
 		fakeService *fakes.StagedProductsService
-		command     commands.StagedProducts
+		command     *commands.StagedProducts
 	)
 
 	BeforeEach(func() {
@@ -45,7 +45,7 @@ var _ = Describe("StagedProducts", func() {
 		})
 
 		It("lists the staged products", func() {
-			err := command.Execute([]string{})
+			err := executeCommand(command, []string{}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.GetDiagnosticReportCallCount()).To(Equal(1))
@@ -57,7 +57,7 @@ var _ = Describe("StagedProducts", func() {
 
 		Context("when the format flag is provided", func() {
 			It("sets the format on the presenter", func() {
-				err := command.Execute([]string{"--format", "json"})
+				err := executeCommand(command, []string{"--format", "json"}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(presenter.SetFormatCallCount()).To(Equal(1))
@@ -70,28 +70,17 @@ var _ = Describe("StagedProducts", func() {
 				It("returns an error", func() {
 					fakeService.GetDiagnosticReportReturns(api.DiagnosticReport{}, errors.New("beep boop"))
 
-					err := command.Execute([]string{})
+					err := executeCommand(command, []string{}, nil)
 					Expect(err).To(MatchError("failed to retrieve staged products beep boop"))
 				})
 			})
 
 			Context("when an unknown flag is passed", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{"--unknown-flag"})
-					Expect(err).To(MatchError("could not parse staged-products flags: flag provided but not defined: -unknown-flag"))
+					err := executeCommand(command, []string{"--unknown-flag"}, nil)
+					Expect(err).To(MatchError("unknown flag `unknown-flag'"))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewStagedProducts(nil, nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This authenticated command lists all staged products.",
-				ShortDescription: "lists staged products",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

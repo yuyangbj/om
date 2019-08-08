@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -54,9 +53,9 @@ var _ = Describe("ConfigureProduct", func() {
 					},
 				}, nil)
 
-				err := client.Execute([]string{
+				err := executeCommand(client, []string{
 					"--config", configFile.Name(),
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.ListStagedProductsCallCount()).To(Equal(1))
@@ -102,9 +101,9 @@ var _ = Describe("ConfigureProduct", func() {
 					},
 				}, nil)
 
-				err := client.Execute([]string{
+				err := executeCommand(client, []string{
 					"--config", configFile.Name(),
-				})
+				}, nil)
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError("configuration not complete.\nThe properties you provided have been set,\nbut some required properties or configuration details are still missing.\nVisit the Ops Manager for details: example.com"))
 
@@ -137,9 +136,9 @@ var _ = Describe("ConfigureProduct", func() {
 					},
 				}, nil)
 
-				err := client.Execute([]string{
+				err := executeCommand(client, []string{
 					"--config", configFile.Name(),
-				})
+				}, nil)
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError("configuration completeness could not be determined.\nThis feature is only supported for OpsMan 2.2+\nIf you're on older version of OpsMan add the line `validate-config-complete: false` to your config file."))
 
@@ -167,9 +166,9 @@ var _ = Describe("ConfigureProduct", func() {
 					},
 				}, nil)
 
-				err := client.Execute([]string{
+				err := executeCommand(client, []string{
 					"--config", configFile.Name(),
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.ListStagedProductsCallCount()).To(Equal(1))
@@ -243,9 +242,9 @@ var _ = Describe("ConfigureProduct", func() {
 					return api.JobProperties{}, errors.New("guid not found")
 				}
 
-				err := client.Execute([]string{
+				err := executeCommand(client, []string{
 					"--config", configFile.Name(),
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.ListStagedProductsCallCount()).To(Equal(1))
@@ -312,9 +311,9 @@ var _ = Describe("ConfigureProduct", func() {
 					"bad":            "do-not-use",
 				}, nil)
 
-				err := client.Execute([]string{
+				err := executeCommand(client, []string{
 					"--config", configFile.Name(),
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.UpdateStagedProductJobMaxInFlightCallCount()).To(Equal(1))
@@ -403,10 +402,10 @@ var _ = Describe("ConfigureProduct", func() {
 						_, err = varsFile.WriteString(`password: something-secure`)
 						Expect(err).NotTo(HaveOccurred())
 
-						err = client.Execute([]string{
+						err = executeCommand(client, []string{
 							"--config", configFile.Name(),
 							"--vars-file", varsFile.Name(),
-						})
+						}, nil)
 						Expect(err).NotTo(HaveOccurred())
 					})
 				})
@@ -421,10 +420,10 @@ var _ = Describe("ConfigureProduct", func() {
 						_, err = configFile.WriteString(productPropertiesWithVariables)
 						Expect(err).NotTo(HaveOccurred())
 
-						err = client.Execute([]string{
+						err = executeCommand(client, []string{
 							"--config", configFile.Name(),
 							"--var", "password=something-secure",
-						})
+						}, nil)
 						Expect(err).NotTo(HaveOccurred())
 					})
 				})
@@ -439,10 +438,10 @@ var _ = Describe("ConfigureProduct", func() {
 						_, err = configFile.WriteString(productPropertiesWithVariables)
 						Expect(err).NotTo(HaveOccurred())
 
-						err = client.Execute([]string{
+						err = executeCommand(client, []string{
 							"--config", configFile.Name(),
 							"--vars-env", "OM_VAR",
-						})
+						}, nil)
 						Expect(err).NotTo(HaveOccurred())
 					})
 
@@ -458,9 +457,9 @@ var _ = Describe("ConfigureProduct", func() {
 						_, err = configFile.WriteString(productPropertiesWithVariables)
 						Expect(err).NotTo(HaveOccurred())
 
-						err = client.Execute([]string{
+						err = executeCommand(client, []string{
 							"--config", configFile.Name(),
-						})
+						}, nil)
 						Expect(err).NotTo(HaveOccurred())
 					})
 				})
@@ -474,9 +473,9 @@ var _ = Describe("ConfigureProduct", func() {
 					_, err = configFile.WriteString(productPropertiesWithVariables)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = client.Execute([]string{
+					err = executeCommand(client, []string{
 						"--config", configFile.Name(),
-					})
+					}, nil)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("Expected to find variables"))
 				})
@@ -498,10 +497,10 @@ var _ = Describe("ConfigureProduct", func() {
 					_, err = opsFile.WriteString(productOpsFile)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = client.Execute([]string{
+					err = executeCommand(client, []string{
 						"--config", configFile.Name(),
 						"--ops-file", opsFile.Name(),
-					})
+					}, nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(service.ListStagedProductsCallCount()).To(Equal(1))
@@ -525,10 +524,10 @@ var _ = Describe("ConfigureProduct", func() {
 					_, err = opsFile.WriteString(`%%%`)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = client.Execute([]string{
+					err = executeCommand(client, []string{
 						"-c", configFile.Name(),
 						"-o", opsFile.Name(),
-					})
+					}, nil)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("could not find expected directive name"))
 				})
@@ -572,9 +571,9 @@ var _ = Describe("ConfigureProduct", func() {
 					return api.JobProperties{}, errors.New("guid not found")
 				}
 
-				err := client.Execute([]string{
+				err := executeCommand(client, []string{
 					"--config", configFile.Name(),
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				_, _, argProperties := service.UpdateStagedProductJobResourceConfigArgsForCall(0)
@@ -613,9 +612,9 @@ var _ = Describe("ConfigureProduct", func() {
 				}, nil)
 
 				service.GetStagedProductJobResourceConfigReturns(api.JobProperties{}, errors.New("some error"))
-				err := client.Execute([]string{
+				err := executeCommand(client, []string{
 					"--config", configFile.Name(),
-				})
+				}, nil)
 
 				Expect(err).To(MatchError("could not fetch existing job configuration: some error"))
 			})
@@ -634,9 +633,9 @@ var _ = Describe("ConfigureProduct", func() {
 			It("logs and then does nothing if they are empty", func() {
 				command := commands.NewConfigureProduct(func() []string { return nil }, service, "", logger)
 
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--config", configFile.Name(),
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.ListStagedProductsCallCount()).To(Equal(1))
@@ -674,7 +673,7 @@ var _ = Describe("ConfigureProduct", func() {
 
 			It("returns an error", func() {
 				client := commands.NewConfigureProduct(func() []string { return nil }, service, "", logger)
-				err := client.Execute([]string{"--config", configFile.Name()})
+				err := executeCommand(client, []string{"--config", configFile.Name()}, nil)
 				Expect(err).To(MatchError("OpsManager does not allow configuration or staging changes while apply changes are running to prevent data loss for configuration and/or staging changes"))
 				Expect(service.ListInstallationsCallCount()).To(Equal(1))
 			})
@@ -695,9 +694,9 @@ var _ = Describe("ConfigureProduct", func() {
 						},
 					}, nil)
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--config", configFile.Name(),
-					})
+					}, nil)
 					Expect(err).To(MatchError(`could not find product "cf"`))
 				})
 			})
@@ -715,7 +714,7 @@ var _ = Describe("ConfigureProduct", func() {
 						},
 					}, nil)
 
-					err := command.Execute([]string{"--config", configFile.Name()})
+					err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 					Expect(err).To(MatchError(ContainSubstring("could not be parsed as valid configuration: yaml: unmarshal errors")))
 				})
 			})
@@ -738,7 +737,7 @@ var _ = Describe("ConfigureProduct", func() {
 							"some-job": "a-guid",
 						}, errors.New("boom"))
 
-					err := command.Execute([]string{"--config", configFile.Name()})
+					err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 					Expect(err).To(MatchError("failed to fetch jobs: boom"))
 				})
 			})
@@ -763,7 +762,7 @@ var _ = Describe("ConfigureProduct", func() {
 
 					service.UpdateStagedProductJobResourceConfigReturns(errors.New("bad things happened"))
 
-					err := command.Execute([]string{"--config", configFile.Name()})
+					err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 					Expect(err).To(MatchError("failed to configure resources: bad things happened"))
 				})
 			})
@@ -771,8 +770,8 @@ var _ = Describe("ConfigureProduct", func() {
 			When("an unknown flag is provided", func() {
 				It("returns an error", func() {
 					command := commands.NewConfigureProduct(func() []string { return nil }, service, "", logger)
-					err := command.Execute([]string{"--badflag"})
-					Expect(err).To(MatchError("could not parse configure-product flags: flag provided but not defined: -badflag"))
+					err := executeCommand(command, []string{"--badflag"}, nil)
+					Expect(err).To(MatchError("unknown flag `badflag'"))
 				})
 			})
 
@@ -783,7 +782,7 @@ var _ = Describe("ConfigureProduct", func() {
 
 				It("returns an error", func() {
 					command := commands.NewConfigureProduct(func() []string { return nil }, service, "", logger)
-					err := command.Execute([]string{"--config", configFile.Name()})
+					err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 					Expect(err).To(MatchError("could not parse configure-product config: \"product-name\" is required"))
 				})
 			})
@@ -797,7 +796,7 @@ var _ = Describe("ConfigureProduct", func() {
 								{GUID: "some-product-guid", Type: "cf"},
 							},
 						}, nil)
-						err := command.Execute([]string{"--config", "some/non-existant/path.yml"})
+						err := executeCommand(command, []string{"--config", "some/non-existant/path.yml"}, nil)
 						Expect(err.Error()).To(ContainSubstring("open some/non-existant/path.yml: no such file or directory"))
 					})
 				})
@@ -827,7 +826,7 @@ var _ = Describe("ConfigureProduct", func() {
 						_, err = configFile.WriteString(invalidConfig)
 						Expect(err).NotTo(HaveOccurred())
 
-						err = client.Execute([]string{"--config", configFile.Name()})
+						err = executeCommand(client, []string{"--config", configFile.Name()}, nil)
 						Expect(err).To(MatchError(ContainSubstring("could not be parsed as valid configuration")))
 
 						os.RemoveAll(configFile.Name())
@@ -850,7 +849,7 @@ var _ = Describe("ConfigureProduct", func() {
 						},
 					}, nil)
 
-					err := command.Execute([]string{"--config", configFile.Name()})
+					err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 					Expect(err).To(MatchError("failed to configure product: some product error"))
 				})
 			})
@@ -870,7 +869,7 @@ var _ = Describe("ConfigureProduct", func() {
 						},
 					}, nil)
 
-					err := command.Execute([]string{"--config", configFile.Name()})
+					err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 					Expect(err).To(MatchError("failed to configure product: some product error"))
 				})
 			})
@@ -901,9 +900,9 @@ var _ = Describe("ConfigureProduct", func() {
 					_, err = configFile.WriteString(errandConfigFile)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = client.Execute([]string{
+					err = executeCommand(client, []string{
 						"--config", configFile.Name(),
-					})
+					}, nil)
 					Expect(err).To(MatchError("failed to set errand state for errand push-usage-service: error configuring errand"))
 				})
 			})
@@ -918,24 +917,13 @@ var _ = Describe("ConfigureProduct", func() {
 					Expect(configFile.Close()).ToNot(HaveOccurred())
 
 					client := commands.NewConfigureProduct(func() []string { return nil }, service, "", logger)
-					err = client.Execute([]string{
+					err = executeCommand(client, []string{
 						"--config", configFile.Name(),
-					})
+					}, nil)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring(`the config file contains unrecognized keys: unrecognized-key, unrecognized-other-key`))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewConfigureProduct(nil, nil, "", nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This authenticated command configures a staged product",
-				ShortDescription: "configures a staged product",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

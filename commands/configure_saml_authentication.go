@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 )
 
@@ -13,7 +12,7 @@ type ConfigureSAMLAuthentication struct {
 	logger  logger
 	Options struct {
 		ConfigFile                string   `long:"config"                short:"c"  description:"path to yml file for configuration (keys must match the following command line flags)"`
-		DecryptionPassphrase      string   `long:"decryption-passphrase" short:"dp" required:"true" description:"passphrase used to encrypt the installation"`
+		DecryptionPassphrase      string   `long:"decryption-passphrase" short:"d" required:"true" description:"passphrase used to encrypt the installation"`
 		HTTPProxyURL              string   `long:"http-proxy-url"                                   description:"proxy for outbound HTTP network traffic"`
 		HTTPSProxyURL             string   `long:"https-proxy-url"                                  description:"proxy for outbound HTTPS network traffic"`
 		NoProxy                   string   `long:"no-proxy"                                         description:"comma-separated list of hosts that do not go through the proxy"`
@@ -27,8 +26,8 @@ type ConfigureSAMLAuthentication struct {
 	}
 }
 
-func NewConfigureSAMLAuthentication(service configureAuthenticationService, logger logger) ConfigureSAMLAuthentication {
-	return ConfigureSAMLAuthentication{
+func NewConfigureSAMLAuthentication(service configureAuthenticationService, logger logger) *ConfigureSAMLAuthentication {
+	return &ConfigureSAMLAuthentication{
 		service: service,
 		logger:  logger,
 	}
@@ -39,11 +38,6 @@ func (ca ConfigureSAMLAuthentication) Execute(args []string) error {
 		boshAdminClientMsg string
 		opsManUaaClientMsg string
 	)
-
-	err := loadConfigFile(args, &ca.Options, nil)
-	if err != nil {
-		return fmt.Errorf("could not parse configure-saml-authentication flags: %s", err)
-	}
 
 	ensureAvailabilityOutput, err := ca.service.EnsureAvailability(api.EnsureAvailabilityInput{})
 	if err != nil {
@@ -145,12 +139,4 @@ This is only supported in OpsManager 2.5 and up.
 	ca.logger.Printf(opsManUaaClientMsg)
 
 	return nil
-}
-
-func (ca ConfigureSAMLAuthentication) Usage() jhanda.Usage {
-	return jhanda.Usage{
-		Description:      "This unauthenticated command helps setup the authentication mechanism for your Ops Manager with SAML.",
-		ShortDescription: "configures Ops Manager with SAML authentication",
-		Flags:            ca.Options,
-	}
 }

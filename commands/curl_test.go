@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -29,7 +28,7 @@ var _ = Describe("Curl", func() {
 	}
 	Describe("Execute", func() {
 		var (
-			command     commands.Curl
+			command     *commands.Curl
 			fakeService *fakes.CurlService
 			stdout      *fakes.Logger
 			stderr      *fakes.Logger
@@ -53,11 +52,11 @@ var _ = Describe("Curl", func() {
 				Body: stringCloser(`{"some-response-key": "%some-response-value"}`),
 			}, nil)
 
-			err := command.Execute([]string{
+			err := executeCommand(command, []string{
 				"--path", "/api/v0/some/path",
 				"--request", "POST",
 				"--data", `{"some-key": "some-value"}`,
-			})
+			}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			input := fakeService.CurlArgsForCall(0)
@@ -88,11 +87,11 @@ var _ = Describe("Curl", func() {
 					Body: stringCloser("{}"),
 				}, nil)
 
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--path", "/api/v0/some/path",
 					"--request", "GET",
 					"--silent",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(stderr.Invocations()).To(BeEmpty())
@@ -107,11 +106,11 @@ var _ = Describe("Curl", func() {
 					Body: stringCloser("{}"),
 				}, nil)
 
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--path", "/api/v0/some/path",
 					"--request", "POST",
 					"--silent",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(stderr.Invocations()).To(HaveLen(0))
@@ -126,11 +125,11 @@ var _ = Describe("Curl", func() {
 					Body: stringCloser("{}"),
 				}, nil)
 
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--path", "/api/v0/some/path",
 					"--request", "GET",
 					"--silent",
-				})
+				}, nil)
 				Expect(err).To(MatchError("server responded with an error"))
 
 				format, content := stderr.PrintfArgsForCall(0)
@@ -152,12 +151,12 @@ var _ = Describe("Curl", func() {
 					Body: stringCloser(`{"some-response-key": "%some-response-value"}`),
 				}, nil)
 
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--path", "/api/v0/some/path",
 					"--request", "POST",
 					"--data", `some_key=some_value`,
 					"--header", "Content-Type: application/x-www-form-urlencoded",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				input := fakeService.CurlArgsForCall(0)
@@ -178,11 +177,11 @@ var _ = Describe("Curl", func() {
 						Body: stringCloser(`{"some-response-key": "some-response-value"}`),
 					}, nil)
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--path", "/api/v0/some/path",
 						"--request", "POST",
 						"--data", `{"some-key": "some-value"}`,
-					})
+					}, nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					content := stdout.PrintlnArgsForCall(0)
@@ -200,11 +199,11 @@ var _ = Describe("Curl", func() {
 						Body: stringCloser(`{"some-response-key": "some-response-value"}`),
 					}, nil)
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--path", "/api/v0/some/path",
 						"--request", "POST",
 						"--data", `{"some-key": "some-value"}`,
-					})
+					}, nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					content := stdout.PrintlnArgsForCall(0)
@@ -216,29 +215,29 @@ var _ = Describe("Curl", func() {
 		Context("failure cases", func() {
 			Context("when the flags cannot be parsed", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{"--bad-flag", "some-value"})
-					Expect(err).To(MatchError("could not parse curl flags: flag provided but not defined: -bad-flag"))
+					err := executeCommand(command, []string{"--bad-flag", "some-value"}, nil)
+					Expect(err).To(MatchError("unknown flag `bad-flag'"))
 				})
 			})
 
 			Context("when the request path is not provided", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--request", "GET",
 						"--data", `{"some-key": "some-value"}`,
-					})
-					Expect(err).To(MatchError("could not parse curl flags: missing required flag \"--path\""))
+					}, nil)
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--path"))
 				})
 			})
 
 			Context("when the request service returns an error", func() {
 				It("returns an error", func() {
 					fakeService.CurlReturns(api.RequestServiceCurlOutput{}, errors.New("some request error"))
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--path", "/api/v0/some/path",
 						"--request", "POST",
 						"--data", `{"some-key": "some-value"}`,
-					})
+					}, nil)
 					Expect(err).To(MatchError("failed to make api request: some request error"))
 				})
 			})
@@ -248,11 +247,11 @@ var _ = Describe("Curl", func() {
 					fakeService.CurlReturns(api.RequestServiceCurlOutput{
 						Body: ioutil.NopCloser(errReader{}),
 					}, nil)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--path", "/api/v0/some/path",
 						"--request", "POST",
 						"--data", `{"some-key": "some-value"}`,
-					})
+					}, nil)
 					Expect(err).To(MatchError("failed to read api response body: failed to read"))
 				})
 			})
@@ -264,25 +263,14 @@ var _ = Describe("Curl", func() {
 						Body:       stringCloser(`{"some-response-key": "some-response-value"}`),
 					}, nil)
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--path", "/api/v0/some/path",
 						"--request", "POST",
 						"--data", `{"some-key": "some-value"}`,
-					})
+					}, nil)
 					Expect(err).To(MatchError("server responded with an error"))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns the usage information for the curl command", func() {
-			command := commands.NewCurl(nil, nil, nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This command issues an authenticated API request as defined in the arguments",
-				ShortDescription: "issues an authenticated API request",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

@@ -6,7 +6,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf/jhanda"
+
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -16,7 +16,7 @@ var _ = Describe("UpdateSSLCertificate", func() {
 	var (
 		fakeLogger  *fakes.Logger
 		fakeService *fakes.UpdateSSLCertificateService
-		command     commands.UpdateSSLCertificate
+		command     *commands.UpdateSSLCertificate
 	)
 
 	BeforeEach(func() {
@@ -27,10 +27,10 @@ var _ = Describe("UpdateSSLCertificate", func() {
 
 	Describe("Execute", func() {
 		It("makes a request to the Opsman to apply a custom certificate", func() {
-			err := command.Execute([]string{
+			err := executeCommand(command, []string{
 				"--certificate-pem", "some CertPem",
 				"--private-key-pem", "some PrivateKey",
-			})
+			}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.UpdateSSLCertificateCallCount()).To(Equal(1))
@@ -43,10 +43,10 @@ var _ = Describe("UpdateSSLCertificate", func() {
 		It("prints a success message saying the custom cert was applied", func() {
 			fakeService.UpdateSSLCertificateReturns(nil)
 
-			err := command.Execute([]string{
+			err := executeCommand(command, []string{
 				"--certificate-pem", "some CertPem",
 				"--private-key-pem", "some PrivateKey",
-			})
+			}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeLogger.PrintfCallCount()).To(Equal(2))
@@ -61,49 +61,38 @@ var _ = Describe("UpdateSSLCertificate", func() {
 				It("returns an error", func() {
 					fakeService.UpdateSSLCertificateReturns(errors.New("failed to apply certificate"))
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--certificate-pem", "some CertPem",
 						"--private-key-pem", "some PrivateKey",
-					})
+					}, nil)
 					Expect(err).To(MatchError("failed to apply certificate"))
 				})
 			})
 
 			Context("when an unknown flag is provided", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{"--badflag"})
-					Expect(err).To(MatchError("could not parse update-ssl-certificate flags: flag provided but not defined: -badflag"))
+					err := executeCommand(command, []string{"--badflag"}, nil)
+					Expect(err).To(MatchError("unknown flag `badflag'"))
 				})
 			})
 
 			Context("when the certificate flag is not provided", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--private-key-pem", "some PrivateKey",
-					})
-					Expect(err).To(MatchError("could not parse update-ssl-certificate flags: missing required flag \"--certificate-pem\""))
+					}, nil)
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--certificate-pem"))
 				})
 			})
 
 			Context("when the private key flag is not provided", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--certificate-pem", "some CertPem",
-					})
-					Expect(err).To(MatchError("could not parse update-ssl-certificate flags: missing required flag \"--private-key-pem\""))
+					}, nil)
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--private-key-pem"))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage info", func() {
-			usage := command.Usage()
-			Expect(usage).To(Equal(jhanda.Usage{
-				Description:      "This authenticated command updates the SSL Certificate on the Ops Manager with the given cert and key",
-				ShortDescription: "updates the SSL Certificate on the Ops Manager",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

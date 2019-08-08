@@ -5,7 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf/jhanda"
+
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -16,7 +16,7 @@ var _ = Describe("PendingChanges", func() {
 	var (
 		presenter *presenterfakes.FormattedPresenter
 		pcService *fakes.PendingChangesService
-		command   commands.PendingChanges
+		command   *commands.PendingChanges
 	)
 
 	BeforeEach(func() {
@@ -55,7 +55,7 @@ var _ = Describe("PendingChanges", func() {
 		})
 
 		It("lists the pending changes", func() {
-			err := command.Execute([]string{})
+			err := executeCommand(command, []string{}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(presenter.SetFormatArgsForCall(0)).To(Equal("table"))
@@ -119,7 +119,7 @@ var _ = Describe("PendingChanges", func() {
 				})
 
 				It("lists change information for all products and returns an error", func() {
-					err := command.Execute(options)
+					err := executeCommand(command, options, nil)
 					Expect(presenter.PresentPendingChangesCallCount()).To(Equal(1))
 					Expect(err).To(HaveOccurred())
 				})
@@ -137,7 +137,7 @@ var _ = Describe("PendingChanges", func() {
 					}, nil)
 				})
 				It("lists change information for all products and does not return an error", func() {
-					err := command.Execute(options)
+					err := executeCommand(command, options, nil)
 					Expect(presenter.PresentPendingChangesCallCount()).To(Equal(1))
 					Expect(err).NotTo(HaveOccurred())
 				})
@@ -146,7 +146,7 @@ var _ = Describe("PendingChanges", func() {
 
 		When("the format flag is provided", func() {
 			It("sets the format on the presenter", func() {
-				err := command.Execute([]string{"--format", "json"})
+				err := executeCommand(command, []string{"--format", "json"}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(presenter.SetFormatArgsForCall(0)).To(Equal("json"))
@@ -156,8 +156,8 @@ var _ = Describe("PendingChanges", func() {
 		Describe("failure cases", func() {
 			When("an unknown flag is passed", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{"--unknown-flag"})
-					Expect(err).To(MatchError("could not parse pending-changes flags: flag provided but not defined: -unknown-flag"))
+					err := executeCommand(command, []string{"--unknown-flag"}, nil)
+					Expect(err).To(MatchError("unknown flag `unknown-flag'"))
 				})
 			})
 
@@ -167,7 +167,7 @@ var _ = Describe("PendingChanges", func() {
 
 					pcService.ListStagedPendingChangesReturns(api.PendingChangesOutput{}, errors.New("beep boop"))
 
-					err := command.Execute([]string{})
+					err := executeCommand(command, []string{}, nil)
 					Expect(err).To(MatchError("failed to retrieve pending changes beep boop"))
 				})
 			})
@@ -189,7 +189,7 @@ var _ = Describe("PendingChanges", func() {
 							},
 						}, nil)
 
-						err := command.Execute([]string{})
+						err := executeCommand(command, []string{}, nil)
 						Expect(presenter.PresentPendingChangesCallCount()).To(Equal(1))
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("configuration is incomplete for guid some-product-without-errands"))
@@ -211,7 +211,7 @@ var _ = Describe("PendingChanges", func() {
 							},
 						}, nil)
 
-						err := command.Execute([]string{})
+						err := executeCommand(command, []string{}, nil)
 						Expect(presenter.PresentPendingChangesCallCount()).To(Equal(1))
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("stemcell is missing for one or more products for guid some-product-without-errands"))
@@ -234,7 +234,7 @@ var _ = Describe("PendingChanges", func() {
 							},
 						}, nil)
 
-						err := command.Execute([]string{})
+						err := executeCommand(command, []string{}, nil)
 						Expect(presenter.PresentPendingChangesCallCount()).To(Equal(1))
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("one or more properties are invalid for guid some-product-without-errands"))
@@ -268,7 +268,7 @@ var _ = Describe("PendingChanges", func() {
 								},
 							}, nil)
 
-							err := command.Execute([]string{})
+							err := executeCommand(command, []string{}, nil)
 							Expect(presenter.PresentPendingChangesCallCount()).To(Equal(1))
 							Expect(err).To(HaveOccurred())
 							Expect(err.Error()).To(ContainSubstring("one or more properties are invalid for guid some-product-without-errands"))
@@ -298,7 +298,7 @@ var _ = Describe("PendingChanges", func() {
 								},
 							}, nil)
 
-							err := command.Execute([]string{})
+							err := executeCommand(command, []string{}, nil)
 							Expect(presenter.PresentPendingChangesCallCount()).To(Equal(1))
 							Expect(err).To(HaveOccurred())
 							Expect(err.Error()).To(ContainSubstring("one or more properties are invalid for guid some-product-without-errands"))
@@ -313,17 +313,6 @@ var _ = Describe("PendingChanges", func() {
 			Describe("Ops Man 2.6 and later", func() {
 
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewPendingChanges(nil, nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This authenticated command lists all pending changes.",
-				ShortDescription: "lists pending changes",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

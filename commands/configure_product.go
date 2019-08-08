@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/config"
 
@@ -50,8 +49,8 @@ type configureProduct struct {
 	Field                       map[string]interface{} `yaml:",inline"`
 }
 
-func NewConfigureProduct(environFunc func() []string, service configureProductService, target string, logger logger) ConfigureProduct {
-	return ConfigureProduct{
+func NewConfigureProduct(environFunc func() []string, service configureProductService, target string, logger logger) *ConfigureProduct {
+	return &ConfigureProduct{
 		environFunc: environFunc,
 		service:     service,
 		target:      target,
@@ -60,10 +59,6 @@ func NewConfigureProduct(environFunc func() []string, service configureProductSe
 }
 
 func (cp ConfigureProduct) Execute(args []string) error {
-	if _, err := jhanda.Parse(&cp.Options, args); err != nil {
-		return fmt.Errorf("could not parse configure-product flags: %s", err)
-	}
-
 	err := checkRunningInstallation(cp.service.ListInstallations)
 	if err != nil {
 		return err
@@ -122,14 +117,6 @@ func (cp ConfigureProduct) Execute(args []string) error {
 	cp.logger.Printf("finished configuring product")
 
 	return nil
-}
-
-func (cp ConfigureProduct) Usage() jhanda.Usage {
-	return jhanda.Usage{
-		Description:      "This authenticated command configures a staged product",
-		ShortDescription: "configures a staged product",
-		Flags:            cp.Options,
-	}
 }
 
 func getJSONProperties(properties interface{}) (string, error) {

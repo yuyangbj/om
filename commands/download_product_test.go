@@ -6,7 +6,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
 	"github.com/pivotal-cf/om/validator"
@@ -73,7 +72,7 @@ var _ = Describe("DownloadProduct", func() {
 					"--output-directory", tempDir,
 				}
 
-				err = command.Execute(commandArgs)
+				err = executeCommand(command, commandArgs, nil)
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
@@ -101,7 +100,7 @@ var _ = Describe("DownloadProduct", func() {
 					"--output-directory", tempDir,
 				}
 
-				err = command.Execute(commandArgs)
+				err = executeCommand(command, commandArgs, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				slug := fakeProductDownloader.GetAllProductVersionsArgsForCall(0)
@@ -139,7 +138,7 @@ var _ = Describe("DownloadProduct", func() {
 						"--output-directory", tempDir,
 					}
 
-					err = command.Execute(commandArgs)
+					err = executeCommand(command, commandArgs, nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					Eventually(buffer).Should(gbytes.Say("warning: could not parse semver version from: 2.0.x"))
@@ -166,7 +165,7 @@ var _ = Describe("DownloadProduct", func() {
 						"--output-directory", tempDir,
 					}
 
-					err = command.Execute(commandArgs)
+					err = executeCommand(command, commandArgs, nil)
 					Expect(err).To(MatchError("no valid versions found for product 'elastic-runtime' and product version regex '2\\..\\..*'\nexisting versions: 3.1.2"))
 				})
 			})
@@ -197,7 +196,7 @@ var _ = Describe("DownloadProduct", func() {
 						"--output-directory", tempDir,
 					}
 
-					err = command.Execute(commandArgs)
+					err = executeCommand(command, commandArgs, nil)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(filepath.Join(tempDir, "cf-2.0-build.1.pivotal")).To(BeAnExistingFile())
 				})
@@ -227,7 +226,7 @@ var _ = Describe("DownloadProduct", func() {
 						"--output-directory", tempDir,
 					}
 
-					err = command.Execute(commandArgs)
+					err = executeCommand(command, commandArgs, nil)
 					Expect(err).To(HaveOccurred())
 					Expect(filepath.Join(tempDir, "cf-2.0-build.1.pivotal")).ToNot(BeAnExistingFile())
 				})
@@ -268,7 +267,7 @@ var _ = Describe("DownloadProduct", func() {
 					"--stemcell-iaas", "google",
 				}
 
-				err = command.Execute(commandArgs)
+				err = executeCommand(command, commandArgs, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeProductDownloader.GetLatestStemcellForProductCallCount()).To(Equal(1))
@@ -316,14 +315,14 @@ var _ = Describe("DownloadProduct", func() {
 					tempDir, err := ioutil.TempDir("", "om-tests-")
 					Expect(err).NotTo(HaveOccurred())
 
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--pivnet-api-token", "token",
 						"--pivnet-file-glob", "*.tgz",
 						"--pivnet-product-slug", "elastic-runtime",
 						"--product-version", "2.0.0",
 						"--output-directory", tempDir,
 						"--stemcell-iaas", "google",
-					})
+					}, nil)
 
 					Expect(err).NotTo(HaveOccurred())
 
@@ -391,27 +390,27 @@ var _ = Describe("DownloadProduct", func() {
 				})
 
 				It("does not download the file again", func() {
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--pivnet-api-token", "token",
 						"--pivnet-file-glob", "*.pivotal",
 						"--pivnet-product-slug", "elastic-runtime",
 						"--product-version", "2.0.0",
 						"--output-directory", tempDir,
-					})
+					}, nil)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakeProductDownloader.DownloadProductToFileCallCount()).To(Equal(0))
 					Expect(buffer).Should(gbytes.Say("already exists, skip downloading"))
 				})
 
 				It("does not panic when downloading the stemcell if file already downloaded", func() {
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--pivnet-api-token", "token",
 						"--pivnet-file-glob", "*.pivotal",
 						"--pivnet-product-slug", "elastic-runtime",
 						"--product-version", "2.0.0",
 						"--stemcell-iaas", "google",
 						"--output-directory", tempDir,
-					})
+					}, nil)
 					Expect(err).ToNot(HaveOccurred())
 				})
 			})
@@ -421,13 +420,13 @@ var _ = Describe("DownloadProduct", func() {
 					createFilePath()
 					setupForProductAPI("")
 
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--pivnet-api-token", "token",
 						"--pivnet-file-glob", "*.pivotal",
 						"--pivnet-product-slug", "elastic-runtime",
 						"--product-version", "2.0.0",
 						"--output-directory", tempDir,
-					})
+					}, nil)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakeProductDownloader.DownloadProductToFileCallCount()).To(Equal(0))
 					Expect(buffer).Should(gbytes.Say("already exists, skip downloading"))
@@ -439,13 +438,13 @@ var _ = Describe("DownloadProduct", func() {
 					createFilePath()
 					setupForProductAPI("20a9668171397bf4ea9487835e28e9ca090f3b04d1d0461f8d3b752a3e0daf30")
 
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--pivnet-api-token", "token",
 						"--pivnet-file-glob", "*.pivotal",
 						"--pivnet-product-slug", "elastic-runtime",
 						"--product-version", "2.0.0",
 						"--output-directory", tempDir,
-					})
+					}, nil)
 					Expect(err).ToNot(HaveOccurred())
 				})
 			})
@@ -491,9 +490,9 @@ output-directory: %s
 				})
 
 				It("returns an error if missing variables", func() {
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--config", configFile.Name(),
-					})
+					}, nil)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("Expected to find variables"))
 				})
@@ -518,20 +517,20 @@ output-directory: %s
 					})
 
 					It("can interpolate variables into the configuration", func() {
-						err = command.Execute([]string{
+						err = executeCommand(command, []string{
 							"--config", configFile.Name(),
 							"--vars-file", varsFile.Name(),
-						})
+						}, nil)
 						Expect(err).NotTo(HaveOccurred())
 					})
 				})
 
 				Context("given vars", func() {
 					It("can interpolate variables into the configuration", func() {
-						err = command.Execute([]string{
+						err = executeCommand(command, []string{
 							"--config", configFile.Name(),
 							"--var", "product-slug=elastic-runtime",
-						})
+						}, nil)
 						Expect(err).NotTo(HaveOccurred())
 					})
 				})
@@ -544,10 +543,10 @@ output-directory: %s
 					})
 
 					It("can interpolate variables into the configuration", func() {
-						err = command.Execute([]string{
+						err = executeCommand(command, []string{
 							"--config", configFile.Name(),
 							"--vars-env", "OM_VAR",
-						})
+						}, environFunc)
 						Expect(err).NotTo(HaveOccurred())
 					})
 				})
@@ -566,14 +565,14 @@ output-directory: %s
 					tempDir, err := ioutil.TempDir("", "om-tests-")
 					Expect(err).NotTo(HaveOccurred())
 
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--pivnet-api-token", "token",
 						"--pivnet-file-glob", "*.pivotal",
 						"--pivnet-product-slug", "mayhem-crew",
 						"--product-version", `2.0.0`,
 						"--output-directory", tempDir,
 						"--s3-bucket", "there once was a man from a",
-					})
+					}, nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					prefixedFileName := path.Join(tempDir, "[mayhem-crew,2.0.0]my-great-product.pivotal")
@@ -584,14 +583,14 @@ output-directory: %s
 					tempDir, err := ioutil.TempDir("", "om-tests-")
 					Expect(err).NotTo(HaveOccurred())
 
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--pivnet-api-token", "token",
 						"--pivnet-file-glob", "*.pivotal",
 						"--pivnet-product-slug", "mayhem-crew",
 						"--product-version", `2.0.0`,
 						"--output-directory", tempDir,
 						"--s3-bucket", "there once was a man from a",
-					})
+					}, nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					downloadReportFileName := path.Join(tempDir, "download-file.json")
@@ -613,13 +612,13 @@ output-directory: %s
 					tempDir, err := ioutil.TempDir("", "om-tests-")
 					Expect(err).NotTo(HaveOccurred())
 
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--pivnet-api-token", "token",
 						"--pivnet-file-glob", "*.pivotal",
 						"--pivnet-product-slug", "mayhem-crew",
 						"--product-version", `2.0.0`,
 						"--output-directory", tempDir,
-					})
+					}, nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					unPrefixedFileName := path.Join(tempDir, "my-great-product.pivotal")
@@ -630,13 +629,13 @@ output-directory: %s
 					tempDir, err := ioutil.TempDir("", "om-tests-")
 					Expect(err).NotTo(HaveOccurred())
 
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--pivnet-api-token", "token",
 						"--pivnet-file-glob", "*.pivotal",
 						"--pivnet-product-slug", "mayhem-crew",
 						"--product-version", `2.0.0`,
 						"--output-directory", tempDir,
-					})
+					}, nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					downloadReportFileName := path.Join(tempDir, "download-file.json")
@@ -654,15 +653,15 @@ output-directory: %s
 	Context("failure cases", func() {
 		Context("when an unknown flag is provided", func() {
 			It("returns an error", func() {
-				err = command.Execute([]string{"--badflag"})
-				Expect(err).To(MatchError("could not parse download-product flags: flag provided but not defined: -badflag"))
+				err = executeCommand(command, []string{"--badflag"}, nil)
+				Expect(err).To(MatchError("unknown flag `badflag'"))
 			})
 		})
 
 		Context("when a required flag is not provided", func() {
 			It("returns an error", func() {
-				err = command.Execute([]string{})
-				Expect(err).To(MatchError("could not parse download-product flags: missing required flag \"--output-directory\""))
+				err = executeCommand(command, []string{}, nil)
+				Expect(err.Error()).To(MatchRegexp("the required flag.*--output-directory"))
 			})
 		})
 
@@ -671,13 +670,13 @@ output-directory: %s
 				tempDir, err := ioutil.TempDir("", "om-tests-")
 				Expect(err).NotTo(HaveOccurred())
 
-				err = command.Execute([]string{
+				err = executeCommand(command, []string{
 					"--pivnet-file-glob", "*.pivotal",
 					"--pivnet-product-slug", "mayhem-crew",
 					"--product-version", `2.0.0`,
 					"--output-directory", tempDir,
-				})
-				Expect(err).To(MatchError(`could not execute "download-product": could not parse download-product flags: missing required flag "--pivnet-api-token"`))
+				}, nil)
+				Expect(err).To(MatchError("the required flag `--pivnet-api-token' was not specified"))
 			})
 		})
 
@@ -686,14 +685,14 @@ output-directory: %s
 				tempDir, err := ioutil.TempDir("", "om-tests-")
 				Expect(err).NotTo(HaveOccurred())
 
-				err = command.Execute([]string{
+				err = executeCommand(command, []string{
 					"--pivnet-api-token", "token",
 					"--pivnet-file-glob", "*.pivotal",
 					"--pivnet-product-slug", "elastic-runtime",
 					"--product-version", "2.0.0",
 					"--product-version-regex", ".*",
 					"--output-directory", tempDir,
-				})
+				}, nil)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("cannot use both --product-version and --product-version-regex; please choose one or the other"))
 			})
@@ -704,12 +703,12 @@ output-directory: %s
 				tempDir, err := ioutil.TempDir("", "om-tests-")
 				Expect(err).NotTo(HaveOccurred())
 
-				err = command.Execute([]string{
+				err = executeCommand(command, []string{
 					"--pivnet-api-token", "token",
 					"--pivnet-file-glob", "*.pivotal",
 					"--pivnet-product-slug", "elastic-runtime",
 					"--output-directory", tempDir,
-				})
+				}, nil)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("no version information provided; please provide either --product-version or --product-version-regex"))
 			})
@@ -724,26 +723,16 @@ output-directory: %s
 				tempDir, err := ioutil.TempDir("", "om-tests-")
 				Expect(err).NotTo(HaveOccurred())
 
-				err = command.Execute([]string{
+				err = executeCommand(command, []string{
 					"--pivnet-api-token", "token",
 					"--pivnet-file-glob", "*.pivotal",
 					"--pivnet-product-slug", "elastic-runtime",
 					"--product-version", "2.0.0",
 					"--output-directory", tempDir,
-				})
+				}, nil)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("could not download product: some-error"))
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This command attempts to download a single product file from Pivotal Network. The API token used must be associated with a user account that has already accepted the EULA for the specified product",
-				ShortDescription: "downloads a specified product file from Pivotal Network",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

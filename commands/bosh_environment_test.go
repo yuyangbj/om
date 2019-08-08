@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -56,7 +55,7 @@ var _ = Describe("bosh-env", func() {
 	})
 	Context("calling the api", func() {
 		var (
-			command             commands.BoshEnvironment
+			command             *commands.BoshEnvironment
 			fakeService         *fakes.BoshEnvironmentService
 			fakeRendererFactory *fakes.RendererFactory
 			stdout              *fakes.Logger
@@ -85,7 +84,7 @@ var _ = Describe("bosh-env", func() {
 
 		Describe("Execute with a nonexistent ssh key", func() {
 			It("executes the API call", func() {
-				err := command.Execute([]string{"-i", "somepath.pem"})
+				err := executeCommand(command, []string{"-i", "somepath.pem"}, nil)
 
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("ssh key file 'somepath.pem' does not exist"))
@@ -121,7 +120,7 @@ var _ = Describe("bosh-env", func() {
 				err = os.Chdir("./tmp")
 				Expect(err).NotTo(HaveOccurred())
 
-				err = command.Execute([]string{"-i", filepath.Base(keyFile)})
+				err = executeCommand(command, []string{"-i", filepath.Base(keyFile)}, nil)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(stdout.PrintlnCallCount()).To(Equal(10))
 				for i := 0; i < 10; i++ {
@@ -148,7 +147,7 @@ var _ = Describe("bosh-env", func() {
 						},
 					},
 				}, nil)
-				err := command.Execute([]string{})
+				err := executeCommand(command, []string{}, nil)
 
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(stdout.PrintlnCallCount()).To(Equal(8))
@@ -163,22 +162,11 @@ var _ = Describe("bosh-env", func() {
 
 		Describe("Execute without ssh key", func() {
 			It("executes the API call", func() {
-				err := command.Execute([]string{})
+				err := executeCommand(command, []string{}, nil)
 
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(stdout.PrintlnCallCount()).To(Equal(8))
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns the usage information for the bosh-env command", func() {
-			command := commands.NewBoshEnvironment(nil, nil, "", nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This prints bosh environment variables to target bosh director. You can invoke it directly to see its output, or use it directly with an evaluate-type command:\nOn posix system: eval \"$(om bosh-env)\"\nOn powershell: iex $(om bosh-env | Out-String)",
-				ShortDescription: "prints bosh environment variables",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

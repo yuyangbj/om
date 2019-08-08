@@ -50,13 +50,8 @@ func NewUploadStemcell(multipart multipart, service uploadStemcellService, logge
 	}
 }
 
-func (us *UploadStemcell) Execute(args []string) error {
-	err := loadConfigFile(args, &us.Options, nil)
-	if err != nil {
-		return fmt.Errorf("could not parse upload-stemcell flags: %s", err)
-	}
-
-	err = us.validate()
+func (us UploadStemcell) Execute(args []string) error {
+	err := us.validate()
 	if err != nil {
 		return err
 	}
@@ -97,7 +92,7 @@ func (us *UploadStemcell) Execute(args []string) error {
 	return nil
 }
 
-func (us *UploadStemcell) uploadStemcell(stemcellFilename string) (err error) {
+func (us UploadStemcell) uploadStemcell(stemcellFilename string) (err error) {
 	for i := 0; i <= maxStemcellUploadRetries; i++ {
 		err = us.multipart.AddFile("stemcell[file]", stemcellFilename)
 		if err != nil {
@@ -132,7 +127,7 @@ func (us *UploadStemcell) uploadStemcell(stemcellFilename string) (err error) {
 	return err
 }
 
-func (us *UploadStemcell) validate() error {
+func (us UploadStemcell) validate() error {
 	if us.Options.Floating != "true" && us.Options.Floating != "false" {
 		return errors.New("--floating must be \"true\" or \"false\". Default: true")
 	}
@@ -155,7 +150,7 @@ func (us *UploadStemcell) validate() error {
 	return nil
 }
 
-func (us *UploadStemcell) checkStemcellUploaded() (exists bool, err error) {
+func (us UploadStemcell) checkStemcellUploaded() (exists bool, err error) {
 	us.logger.Printf("processing stemcell")
 
 	stemcellFilename := us.Options.Stemcell

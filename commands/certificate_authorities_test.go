@@ -3,7 +3,6 @@ package commands_test
 import (
 	"fmt"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -15,7 +14,7 @@ import (
 
 var _ = Describe("Certificate Authorities", func() {
 	var (
-		certificateAuthorities            commands.CertificateAuthorities
+		certificateAuthorities            *commands.CertificateAuthorities
 		fakeCertificateAuthoritiesService *fakes.CertificateAuthoritiesService
 		fakePresenter                     *presenterfakes.FormattedPresenter
 	)
@@ -56,7 +55,7 @@ var _ = Describe("Certificate Authorities", func() {
 		})
 
 		It("prints the certificate authorities to a table", func() {
-			err := certificateAuthorities.Execute([]string{})
+			err := executeCommand(certificateAuthorities, []string{}, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(fakeCertificateAuthoritiesService.ListCertificateAuthoritiesCallCount()).To(Equal(1))
@@ -67,9 +66,9 @@ var _ = Describe("Certificate Authorities", func() {
 
 		Context("when the format flag is provided", func() {
 			It("calls the presenter to set the json format", func() {
-				err := certificateAuthorities.Execute([]string{
+				err := executeCommand(certificateAuthorities, []string{
 					"--format", "json",
-				})
+				}, nil)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakePresenter.SetFormatCallCount()).To(Equal(1))
@@ -79,9 +78,9 @@ var _ = Describe("Certificate Authorities", func() {
 
 		Context("when the flag cannot parsed", func() {
 			It("returns an error", func() {
-				err := certificateAuthorities.Execute([]string{"--bogus", "nothing"})
+				err := executeCommand(certificateAuthorities, []string{"--bogus", "nothing"}, nil)
 				Expect(err).To(MatchError(
-					"could not parse certificate-authorities flags: flag provided but not defined: -bogus",
+					"unknown flag `bogus'",
 				))
 			})
 		})
@@ -93,21 +92,9 @@ var _ = Describe("Certificate Authorities", func() {
 					fmt.Errorf("could not get certificate authorities"),
 				)
 
-				err := certificateAuthorities.Execute([]string{})
+				err := executeCommand(certificateAuthorities, []string{}, nil)
 				Expect(err).To(MatchError("could not get certificate authorities"))
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage", func() {
-			usage := certificateAuthorities.Usage()
-
-			Expect(usage).To(Equal(jhanda.Usage{
-				Description:      "lists certificates managed by Ops Manager",
-				ShortDescription: "lists certificates managed by Ops Manager",
-				Flags:            certificateAuthorities.Options,
-			}))
 		})
 	})
 })

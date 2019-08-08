@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -21,7 +20,7 @@ var _ = Describe("ConfigureLDAPAuthentication", func() {
 		var (
 			service         *fakes.ConfigureAuthenticationService
 			logger          *fakes.Logger
-			command         commands.ConfigureLDAPAuthentication
+			command         *commands.ConfigureLDAPAuthentication
 			commandLineArgs []string
 			expectedPayload api.SetupInput
 		)
@@ -85,7 +84,7 @@ var _ = Describe("ConfigureLDAPAuthentication", func() {
 			commandLineArgs = append(commandLineArgs, "--precreated-client-secret", "test-client-secret")
 			expectedPayload.PrecreatedClientSecret = "test-client-secret"
 
-			err := command.Execute(commandLineArgs)
+			err := executeCommand(command, commandLineArgs, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(service.SetupArgsForCall(0)).To(Equal(expectedPayload))
@@ -127,7 +126,7 @@ It will have the username 'precreated-client' and the client secret you provided
 			})
 
 			It("configure LDAP with bosh admin client warning", func() {
-				err := command.Execute(commandLineArgs)
+				err := executeCommand(command, commandLineArgs, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.SetupArgsForCall(0)).To(Equal(expectedPayload))
@@ -161,7 +160,7 @@ This is only supported in OpsManager 2.4 and up.
 			})
 
 			It("errors out if you try to provide a client secret", func() {
-				err := command.Execute(commandLineArgs)
+				err := executeCommand(command, commandLineArgs, nil)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring(`
 Cannot use the "--precreated-client-secret" argument.
@@ -177,7 +176,7 @@ This is only supported in OpsManager 2.5 and up.
 			})
 
 			It("configures LDAP auth and notifies the user that it skipped client creation", func() {
-				err := command.Execute(commandLineArgs)
+				err := executeCommand(command, commandLineArgs, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.SetupArgsForCall(0)).To(Equal(expectedPayload))
@@ -211,7 +210,7 @@ This was skipped due to the 'skip-create-bosh-admin-client' flag.
 				})
 
 				It("configures LDAP and notifies the user that it skipped client creation", func() {
-					err := command.Execute(commandLineArgs)
+					err := executeCommand(command, commandLineArgs, nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(service.SetupArgsForCall(0)).To(Equal(expectedPayload))
@@ -244,7 +243,7 @@ This was skipped due to the 'skip-create-bosh-admin-client' flag.
 			})
 
 			It("returns without configuring the authentication system", func() {
-				err := command.Execute(commandLineArgs)
+				err := executeCommand(command, commandLineArgs, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.EnsureAvailabilityCallCount()).To(Equal(1))
@@ -284,9 +283,9 @@ precreated-client-secret: test-client-secret
 			})
 
 			It("reads configuration from config file", func() {
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--config", configFile.Name(),
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.SetupArgsForCall(0)).To(Equal(expectedPayload))
@@ -304,10 +303,10 @@ precreated-client-secret: test-client-secret
 			})
 
 			It("is overridden by commandline flags", func() {
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--config", configFile.Name(),
 					"--server-url", "ldap://example.com",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				expectedPayload.LDAPSettings.ServerURL = "ldap://example.com"
@@ -321,8 +320,8 @@ precreated-client-secret: test-client-secret
 		Context("failure cases", func() {
 			Context("when config file cannot be opened", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{"--config", "something"})
-					Expect(err).To(MatchError("could not parse configure-ldap-authentication flags: could not load the config file: could not read file (something): open something: no such file or directory"))
+					err := executeCommand(command, []string{"--config", "something"}, nil)
+					Expect(err).To(MatchError("could not load the config file: could not read file (something): open something: no such file or directory"))
 
 				})
 			})
@@ -331,7 +330,7 @@ precreated-client-secret: test-client-secret
 				It("returns an error", func() {
 					service.EnsureAvailabilityReturns(api.EnsureAvailabilityOutput{}, errors.New("failed to fetch status"))
 
-					err := command.Execute(commandLineArgs)
+					err := executeCommand(command, commandLineArgs, nil)
 					Expect(err).To(MatchError("could not determine initial configuration status: failed to fetch status"))
 				})
 			})
@@ -342,7 +341,7 @@ precreated-client-secret: test-client-secret
 						Status: api.EnsureAvailabilityStatusUnknown,
 					}, nil)
 
-					err := command.Execute(commandLineArgs)
+					err := executeCommand(command, commandLineArgs, nil)
 					Expect(err).To(MatchError("could not determine initial configuration status: received unexpected status"))
 				})
 			})
@@ -355,7 +354,7 @@ precreated-client-secret: test-client-secret
 
 					service.SetupReturns(api.SetupOutput{}, errors.New("could not setup"))
 
-					err := command.Execute(commandLineArgs)
+					err := executeCommand(command, commandLineArgs, nil)
 					Expect(err).To(MatchError("could not configure authentication: could not setup"))
 				})
 			})
@@ -374,7 +373,7 @@ precreated-client-secret: test-client-secret
 						return eaOutputs[service.EnsureAvailabilityCallCount()-1], eaErrors[service.EnsureAvailabilityCallCount()-1]
 					}
 
-					err := command.Execute(commandLineArgs)
+					err := executeCommand(command, commandLineArgs, nil)
 					Expect(err).To(MatchError("could not determine final configuration status: failed to fetch status"))
 				})
 			})
@@ -382,22 +381,11 @@ precreated-client-secret: test-client-secret
 			When("missing required fields", func() {
 				It("returns an error", func() {
 					command := commands.NewConfigureLDAPAuthentication(nil, nil)
-					err := command.Execute(nil)
-					Expect(err).To(MatchError("could not parse configure-ldap-authentication flags: missing required flag \"--decryption-passphrase\""))
+					err := executeCommand(command, nil, nil)
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--decryption-passphrase"))
 				})
 			})
 
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewConfigureLDAPAuthentication(nil, nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This unauthenticated command helps setup the authentication mechanism for your Ops Manager with LDAP.",
-				ShortDescription: "configures Ops Manager with LDAP authentication",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

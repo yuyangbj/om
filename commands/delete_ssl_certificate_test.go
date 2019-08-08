@@ -6,7 +6,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf/jhanda"
+
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
 )
@@ -15,7 +15,7 @@ var _ = Describe("DeleteSSLCertificate", func() {
 	var (
 		fakeService *fakes.DeleteSSLCertificateService
 		fakeLogger  *fakes.Logger
-		command     commands.DeleteSSLCertificate
+		command     *commands.DeleteSSLCertificate
 	)
 
 	BeforeEach(func() {
@@ -26,7 +26,7 @@ var _ = Describe("DeleteSSLCertificate", func() {
 
 	Describe("Execute", func() {
 		It("deletes the custom ssl certificate", func() {
-			err := command.Execute([]string{})
+			err := executeCommand(command, []string{}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.DeleteSSLCertificateCallCount()).To(Equal(1))
@@ -43,27 +43,16 @@ var _ = Describe("DeleteSSLCertificate", func() {
 				It("returns an error", func() {
 					fakeService.DeleteSSLCertificateReturns(errors.New("failed to delete certificate"))
 
-					err := command.Execute([]string{})
+					err := executeCommand(command, []string{}, nil)
 					Expect(err).To(MatchError("failed to delete certificate"))
 				})
 			})
 			Context("when an unknown flag is provided", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{"--badflag"})
-					Expect(err).To(MatchError("could not parse delete-ssl-certificate flags: flag provided but not defined: -badflag"))
+					err := executeCommand(command, []string{"--badflag"}, nil)
+					Expect(err).To(MatchError("unknown flag `badflag'"))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage info", func() {
-			usage := command.Usage()
-			Expect(usage).To(Equal(jhanda.Usage{
-				Description:      "This authenticated command deletes a custom certificate applied to Ops Manager and reverts to the auto-generated cert",
-				ShortDescription: "deletes certificate applied to Ops Manager",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

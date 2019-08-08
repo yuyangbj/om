@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -20,7 +19,7 @@ var _ = Describe("ConfigureSAMLAuthentication", func() {
 		var (
 			service         *fakes.ConfigureAuthenticationService
 			logger          *fakes.Logger
-			command         commands.ConfigureSAMLAuthentication
+			command         *commands.ConfigureSAMLAuthentication
 			commandLineArgs []string
 			expectedPayload api.SetupInput
 		)
@@ -71,7 +70,7 @@ var _ = Describe("ConfigureSAMLAuthentication", func() {
 			commandLineArgs = append(commandLineArgs, "--precreated-client-secret", "test-client-secret")
 			expectedPayload.PrecreatedClientSecret = "test-client-secret"
 
-			err := command.Execute(commandLineArgs)
+			err := executeCommand(command, commandLineArgs, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(service.SetupArgsForCall(0)).To(Equal(expectedPayload))
@@ -112,7 +111,7 @@ It will have the username 'precreated-client' and the client secret you provided
 			})
 
 			It("configures SAML with bosh admin client warning", func() {
-				err := command.Execute(commandLineArgs)
+				err := executeCommand(command, commandLineArgs, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.SetupArgsForCall(0)).To(Equal(expectedPayload))
@@ -146,7 +145,7 @@ This is only supported in OpsManager 2.4 and up.
 			})
 
 			It("errors out if you try to provide a client secret", func() {
-				err := command.Execute(commandLineArgs)
+				err := executeCommand(command, commandLineArgs, nil)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring(`
 Cannot use the "--precreated-client-secret" argument.
@@ -165,7 +164,7 @@ This is only supported in OpsManager 2.5 and up.
 				expectedPayload.PrecreatedClientSecret = "test-client-secret"
 				commandLineArgs = append(commandLineArgs, "--precreated-client-secret", "test-client-secret")
 
-				err := command.Execute(commandLineArgs)
+				err := executeCommand(command, commandLineArgs, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.SetupArgsForCall(0)).To(Equal(expectedPayload))
@@ -197,7 +196,7 @@ This was skipped due to the 'skip-create-bosh-admin-client' flag.
 				})
 
 				It("configures SAML and notifies the user that it skipped client creation", func() {
-					err := command.Execute(commandLineArgs)
+					err := executeCommand(command, commandLineArgs, nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(service.SetupArgsForCall(0)).To(Equal(expectedPayload))
@@ -229,7 +228,7 @@ This was skipped due to the 'skip-create-bosh-admin-client' flag.
 				}, nil)
 
 				command := commands.NewConfigureSAMLAuthentication(service, logger)
-				err := command.Execute(commandLineArgs)
+				err := executeCommand(command, commandLineArgs, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.EnsureAvailabilityCallCount()).To(Equal(1))
@@ -263,9 +262,9 @@ precreated-client-secret: test-client-secret
 			})
 
 			It("reads configuration from config file", func() {
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--config", configFile.Name(),
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.SetupArgsForCall(0)).To(Equal(expectedPayload))
@@ -283,10 +282,10 @@ precreated-client-secret: test-client-secret
 			})
 
 			It("is overridden by commandline flags", func() {
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--config", configFile.Name(),
 					"--saml-idp-metadata", "https://super.example.com:6543",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.SetupArgsForCall(0)).To(Equal(api.SetupInput{
@@ -318,15 +317,15 @@ precreated-client-secret: test-client-secret
 		Context("failure cases", func() {
 			Context("when an unknown flag is provided", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{"--banana"})
-					Expect(err).To(MatchError("could not parse configure-saml-authentication flags: flag provided but not defined: -banana"))
+					err := executeCommand(command, []string{"--banana"}, nil)
+					Expect(err).To(MatchError("unknown flag `banana'"))
 				})
 			})
 
 			Context("when config file cannot be opened", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{"--config", "something"})
-					Expect(err).To(MatchError("could not parse configure-saml-authentication flags: could not load the config file: could not read file (something): open something: no such file or directory"))
+					err := executeCommand(command, []string{"--config", "something"}, nil)
+					Expect(err).To(MatchError("could not load the config file: could not read file (something): open something: no such file or directory"))
 
 				})
 			})
@@ -336,7 +335,7 @@ precreated-client-secret: test-client-secret
 					service.EnsureAvailabilityReturns(api.EnsureAvailabilityOutput{}, errors.New("failed to fetch status"))
 
 					command := commands.NewConfigureSAMLAuthentication(service, &fakes.Logger{})
-					err := command.Execute(commandLineArgs)
+					err := executeCommand(command, commandLineArgs, nil)
 					Expect(err).To(MatchError("could not determine initial configuration status: failed to fetch status"))
 				})
 			})
@@ -348,7 +347,7 @@ precreated-client-secret: test-client-secret
 					}, nil)
 
 					command := commands.NewConfigureSAMLAuthentication(service, &fakes.Logger{})
-					err := command.Execute(commandLineArgs)
+					err := executeCommand(command, commandLineArgs, nil)
 					Expect(err).To(MatchError("could not determine initial configuration status: received unexpected status"))
 				})
 			})
@@ -362,7 +361,7 @@ precreated-client-secret: test-client-secret
 					service.SetupReturns(api.SetupOutput{}, errors.New("could not setup"))
 
 					command := commands.NewConfigureSAMLAuthentication(service, &fakes.Logger{})
-					err := command.Execute(commandLineArgs)
+					err := executeCommand(command, commandLineArgs, nil)
 					Expect(err).To(MatchError("could not configure authentication: could not setup"))
 				})
 			})
@@ -383,7 +382,7 @@ precreated-client-secret: test-client-secret
 					}
 
 					command := commands.NewConfigureSAMLAuthentication(service, &fakes.Logger{})
-					err := command.Execute(commandLineArgs)
+					err := executeCommand(command, commandLineArgs, nil)
 					Expect(err).To(MatchError("could not determine final configuration status: failed to fetch status"))
 				})
 			})
@@ -391,85 +390,74 @@ precreated-client-secret: test-client-secret
 			Context("when the --saml-idp-metadata field is not configured with others", func() {
 				It("returns an error", func() {
 					command := commands.NewConfigureSAMLAuthentication(nil, nil)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--decryption-passphrase", "some-passphrase",
 						"--saml-bosh-idp-metadata", "https://bosh-saml.example.com:8080",
 						"--saml-rbac-admin-group", "opsman.full_control",
 						"--saml-rbac-groups-attribute", "myenterprise",
-					})
+					}, nil)
 					Expect(err).To(HaveOccurred())
 
-					Expect(err).To(MatchError("could not parse configure-saml-authentication flags: missing required flag \"--saml-idp-metadata\""))
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--saml-idp-metadata"))
 				})
 			})
 
 			Context("when the --saml-bosh-idp-metadata field is not configured with others", func() {
 				It("returns an error", func() {
 					command := commands.NewConfigureSAMLAuthentication(nil, nil)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--decryption-passphrase", "some-passphrase",
 						"--saml-idp-metadata", "https://saml.example.com:8080",
 						"--saml-rbac-admin-group", "opsman.full_control",
 						"--saml-rbac-groups-attribute", "myenterprise",
-					})
+					}, nil)
 					Expect(err).To(HaveOccurred())
 
-					Expect(err).To(MatchError("could not parse configure-saml-authentication flags: missing required flag \"--saml-bosh-idp-metadata\""))
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--saml-bosh-idp-metadata"))
 				})
 			})
 
 			Context("when the --saml-rbac-admin-group field is not configured with others", func() {
 				It("returns an error", func() {
 					command := commands.NewConfigureSAMLAuthentication(nil, nil)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--decryption-passphrase", "some-passphrase",
 						"--saml-idp-metadata", "https://saml.example.com:8080",
 						"--saml-bosh-idp-metadata", "https://bosh-saml.example.com:8080",
 						"--saml-rbac-groups-attribute", "myenterprise",
-					})
+					}, nil)
 					Expect(err).To(HaveOccurred())
 
-					Expect(err).To(MatchError("could not parse configure-saml-authentication flags: missing required flag \"--saml-rbac-admin-group\""))
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--saml-rbac-admin-group"))
 				})
 			})
 
 			Context("when the --saml-rbac-groups-attribute field is not configured with others", func() {
 				It("returns an error", func() {
 					command := commands.NewConfigureSAMLAuthentication(nil, nil)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--decryption-passphrase", "some-passphrase",
 						"--saml-idp-metadata", "https://saml.example.com:8080",
 						"--saml-bosh-idp-metadata", "https://bosh-saml.example.com:8080",
 						"--saml-rbac-admin-group", "opsman.full_control",
-					})
+					}, nil)
 					Expect(err).To(HaveOccurred())
 
-					Expect(err).To(MatchError("could not parse configure-saml-authentication flags: missing required flag \"--saml-rbac-groups-attribute\""))
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--saml-rbac-groups-attribute"))
 				})
 			})
 
 			Context("when the --decryption-passphrase flag is missing", func() {
 				It("returns an error", func() {
 					command := commands.NewConfigureSAMLAuthentication(nil, nil)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--saml-idp-metadata", "https://saml.example.com:8080",
 						"--saml-bosh-idp-metadata", "https://bosh-saml.example.com:8080",
 						"--saml-rbac-admin-group", "opsman.full_control",
-					})
-					Expect(err).To(MatchError("could not parse configure-saml-authentication flags: missing required flag \"--decryption-passphrase\""))
+					}, nil)
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--decryption-passphrase"))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewConfigureSAMLAuthentication(nil, nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This unauthenticated command helps setup the authentication mechanism for your Ops Manager with SAML.",
-				ShortDescription: "configures Ops Manager with SAML authentication",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

@@ -6,7 +6,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
 	"io/ioutil"
@@ -44,7 +43,7 @@ var _ = Describe("ConfigTemplate", func() {
 						"--product-version", "d",
 					}
 
-					err := command.Execute(args)
+					err := executeCommand(command, args, nil)
 					Expect(err).To(MatchError("output-directory does not exist: /not/real/directory"))
 				})
 
@@ -68,7 +67,7 @@ var _ = Describe("ConfigTemplate", func() {
 				})
 
 				It("creates nested subdirectories named by product slug and version", func() {
-					err := command.Execute(args)
+					err := executeCommand(command, args, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					productDir := filepath.Join(tempDir, "example-product")
@@ -79,7 +78,7 @@ var _ = Describe("ConfigTemplate", func() {
 				})
 
 				It("creates the various generated sub directories within the product directory", func() {
-					err := command.Execute(args)
+					err := executeCommand(command, args, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					featuresDir := filepath.Join(tempDir, "example-product", "1.1.1", "features")
@@ -96,7 +95,7 @@ var _ = Describe("ConfigTemplate", func() {
 				})
 
 				It("creates the correct files", func() {
-					err := command.Execute(args)
+					err := executeCommand(command, args, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					productDir := filepath.Join(tempDir, "example-product", "1.1.1")
@@ -111,24 +110,6 @@ var _ = Describe("ConfigTemplate", func() {
 		})
 	})
 
-	Describe("Usage", func() {
-		BeforeEach(func() {
-			command = commands.NewConfigTemplate(func(*commands.ConfigTemplate) commands.MetadataProvider {
-				f := &fakes.MetadataProvider{}
-				f.MetadataBytesReturns([]byte(`{name: example-product, product_version: "1.1.1"}`), nil)
-				return f
-			})
-		})
-
-		It("returns usage information for the command", func() {
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "**EXPERIMENTAL** this command generates a product configuration template from a .pivotal file on Pivnet",
-				ShortDescription: "**EXPERIMENTAL** generates a config template from a Pivnet product",
-				Flags:            command.Options,
-			}))
-		})
-	})
-
 	Describe("flag handling", func() {
 		When("an unknown flag is provided", func() {
 			BeforeEach(func() {
@@ -139,10 +120,10 @@ var _ = Describe("ConfigTemplate", func() {
 				})
 			})
 			It("returns an error", func() {
-				err := command.Execute([]string{"--invalid"})
-				Expect(err).To(MatchError("could not parse config-template flags: flag provided but not defined: -invalid"))
-				err = command.Execute([]string{"--unreal"})
-				Expect(err).To(MatchError("could not parse config-template flags: flag provided but not defined: -unreal"))
+				err := executeCommand(command, []string{"--invalid"}, nil)
+				Expect(err).To(MatchError("unknown flag `invalid'"))
+				err = executeCommand(command, []string{"--unreal"}, nil)
+				Expect(err).To(MatchError("unknown flag `unreal'"))
 			})
 		})
 
@@ -167,8 +148,8 @@ var _ = Describe("ConfigTemplate", func() {
 						break
 					}
 				}
-				err := command.Execute(args)
-				Expect(err).To(MatchError(fmt.Sprintf("could not parse config-template flags: missing required flag \"%s\"", required)))
+				err := executeCommand(command, args, nil)
+				Expect(err).To(MatchError(fmt.Sprintf("missing required flag \"%s\"", required)))
 			},
 				Entry("with output-directory", "--output-directory"),
 				Entry("with pivnet-api-token", "--pivnet-api-token"),
@@ -197,7 +178,7 @@ var _ = Describe("ConfigTemplate", func() {
 						"--product-version", "1.1.1",
 					}
 
-					err := command.Execute(args)
+					err := executeCommand(command, args, nil)
 					Expect(err).To(MatchError("error getting metadata for example-product at version 1.1.1: cannot get metadata"))
 				})
 			})
@@ -219,7 +200,7 @@ var _ = Describe("ConfigTemplate", func() {
 						"--product-version", "1.1.1",
 					}
 
-					err := command.Execute(args)
+					err := executeCommand(command, args, nil)
 					Expect(err).To(HaveOccurred())
 				})
 			})

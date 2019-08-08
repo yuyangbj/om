@@ -3,7 +3,6 @@ package commands
 import (
 	"fmt"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/extractor"
 	"github.com/pivotal-cf/om/network"
@@ -19,7 +18,7 @@ type UploadProduct struct {
 	Options   struct {
 		ConfigFile      string `long:"config"           short:"c"   description:"path to yml file for configuration (keys must match the following command line flags)"`
 		Product         string `long:"product"          short:"p"   description:"path to product" required:"true"`
-		PollingInterval int    `long:"polling-interval" short:"pi"  description:"interval (in seconds) at which to print status" default:"1"`
+		PollingInterval int    `long:"polling-interval" short:"i"  description:"interval (in seconds) at which to print status" default:"1"`
 		Shasum          string `long:"shasum"                       description:"shasum of the provided product file to be used for validation"`
 		Version         string `long:"product-version"              description:"version of the provided product file to be used for validation"`
 	}
@@ -37,8 +36,8 @@ type metadataExtractor interface {
 	ExtractMetadata(string) (extractor.Metadata, error)
 }
 
-func NewUploadProduct(multipart multipart, metadataExtractor metadataExtractor, service uploadProductService, logger logger) UploadProduct {
-	return UploadProduct{
+func NewUploadProduct(multipart multipart, metadataExtractor metadataExtractor, service uploadProductService, logger logger) *UploadProduct {
+	return &UploadProduct{
 		multipart:         multipart,
 		metadataExtractor: metadataExtractor,
 		logger:            logger,
@@ -46,20 +45,7 @@ func NewUploadProduct(multipart multipart, metadataExtractor metadataExtractor, 
 	}
 }
 
-func (up UploadProduct) Usage() jhanda.Usage {
-	return jhanda.Usage{
-		Description:      "This command attempts to upload a product to the Ops Manager",
-		ShortDescription: "uploads a given product to the Ops Manager targeted",
-		Flags:            up.Options,
-	}
-}
-
 func (up UploadProduct) Execute(args []string) error {
-	err := loadConfigFile(args, &up.Options, nil)
-	if err != nil {
-		return fmt.Errorf("could not parse upload-product flags: %s", err)
-	}
-
 	if up.Options.Shasum != "" {
 		shaValidator := validator.NewSHA256Calculator()
 		shasum, err := shaValidator.Checksum(up.Options.Product)

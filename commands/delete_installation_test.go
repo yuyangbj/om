@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -84,7 +83,7 @@ var _ = Describe("DeleteInstallation", func() {
 			_, err = stdin.WriteString("yes\n")
 			Expect(err).NotTo(HaveOccurred())
 
-			err = command.Execute([]string{})
+			err = executeCommand(command, []string{}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			format, content := logger.PrintfArgsForCall(0)
@@ -129,7 +128,7 @@ var _ = Describe("DeleteInstallation", func() {
 
 			command := commands.NewDeleteInstallation(fakeService, writer, logger, stdin, 1)
 
-			err := command.Execute([]string{"--force"})
+			err := executeCommand(command, []string{"--force"}, nil)
 			Expect(err).To(MatchError("deleting the installation was unsuccessful"))
 		})
 
@@ -141,7 +140,7 @@ var _ = Describe("DeleteInstallation", func() {
 
 			command := commands.NewDeleteInstallation(fakeService, writer, logger, stdin, 1)
 
-			err := command.Execute([]string{"--force"})
+			err := executeCommand(command, []string{"--force"}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			format, content := logger.PrintfArgsForCall(0)
@@ -172,7 +171,7 @@ var _ = Describe("DeleteInstallation", func() {
 
 				command := commands.NewDeleteInstallation(fakeService, writer, logger, stdin, 1)
 
-				err := command.Execute([]string{"--force"})
+				err := executeCommand(command, []string{"--force"}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeService.DeleteInstallationAssetCollectionCallCount()).To(Equal(0))
@@ -192,7 +191,7 @@ var _ = Describe("DeleteInstallation", func() {
 
 					command := commands.NewDeleteInstallation(fakeService, writer, logger, stdin, 1)
 
-					err := command.Execute([]string{"--force"})
+					err := executeCommand(command, []string{"--force"}, nil)
 					Expect(err).To(MatchError("failed to delete installation: some error"))
 				})
 			})
@@ -207,7 +206,7 @@ var _ = Describe("DeleteInstallation", func() {
 
 					command := commands.NewDeleteInstallation(fakeService, writer, logger, stdin, 1)
 
-					err := command.Execute([]string{"--force"})
+					err := executeCommand(command, []string{"--force"}, nil)
 					Expect(err).To(MatchError("installation failed to get status: another error"))
 				})
 			})
@@ -228,7 +227,7 @@ var _ = Describe("DeleteInstallation", func() {
 
 					command := commands.NewDeleteInstallation(fakeService, writer, logger, stdin, 1)
 
-					err := command.Execute([]string{"--force"})
+					err := executeCommand(command, []string{"--force"}, nil)
 					Expect(err).To(MatchError("installation failed to get logs: no"))
 				})
 			})
@@ -251,21 +250,10 @@ var _ = Describe("DeleteInstallation", func() {
 
 					command := commands.NewDeleteInstallation(fakeService, writer, logger, stdin, 1)
 
-					err := command.Execute([]string{"--force"})
+					err := executeCommand(command, []string{"--force"}, nil)
 					Expect(err).To(MatchError("installation failed to flush logs: failed flush"))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewDeleteInstallation(nil, nil, nil, nil, 1)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This authenticated command deletes all the products installed on the targeted Ops Manager.",
-				ShortDescription: "deletes all the products on the Ops Manager targeted",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

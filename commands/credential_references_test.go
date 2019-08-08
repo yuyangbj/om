@@ -3,7 +3,6 @@ package commands_test
 import (
 	"errors"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -19,7 +18,7 @@ var _ = Describe("CredentialReferences", func() {
 		fakePresenter *presenterfakes.FormattedPresenter
 		logger        *fakes.Logger
 
-		command commands.CredentialReferences
+		command *commands.CredentialReferences
 	)
 
 	BeforeEach(func() {
@@ -48,9 +47,9 @@ var _ = Describe("CredentialReferences", func() {
 		})
 
 		It("lists the credential references in alphabetical order", func() {
-			err := command.Execute([]string{
+			err := executeCommand(command, []string{
 				"--product-name", "some-product",
-			})
+			}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakePresenter.PresentCredentialReferencesCallCount()).To(Equal(1))
@@ -63,10 +62,10 @@ var _ = Describe("CredentialReferences", func() {
 
 		Context("when the format flag is provided", func() {
 			It("sets format on the presenter", func() {
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--product-name", "some-product",
 					"--format", "json",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakePresenter.SetFormatCallCount()).To(Equal(1))
@@ -78,16 +77,16 @@ var _ = Describe("CredentialReferences", func() {
 			Context("when an unknown flag is provided", func() {
 				It("returns an error", func() {
 					command := commands.NewCredentialReferences(fakeService, fakePresenter, logger)
-					err := command.Execute([]string{"--badflag"})
-					Expect(err).To(MatchError("could not parse credential-references flags: flag provided but not defined: -badflag"))
+					err := executeCommand(command, []string{"--badflag"}, nil)
+					Expect(err).To(MatchError("unknown flag `badflag'"))
 				})
 			})
 
 			Context("when the product-name flag is not provided", func() {
 				It("returns an error", func() {
 					command := commands.NewCredentialReferences(fakeService, fakePresenter, logger)
-					err := command.Execute([]string{})
-					Expect(err).To(MatchError("could not parse credential-references flags: missing required flag \"--product-name\""))
+					err := executeCommand(command, []string{}, nil)
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--product-name"))
 				})
 			})
 
@@ -99,9 +98,9 @@ var _ = Describe("CredentialReferences", func() {
 				It("returns an error", func() {
 					command := commands.NewCredentialReferences(fakeService, fakePresenter, logger)
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
-					})
+					}, nil)
 					Expect(err).To(MatchError(ContainSubstring("failed to list credential references")))
 				})
 			})
@@ -112,9 +111,9 @@ var _ = Describe("CredentialReferences", func() {
 
 					fakeService.ListDeployedProductCredentialsReturns(api.CredentialReferencesOutput{}, nil)
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
-					})
+					}, nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(fakePresenter.PresentCredentialReferencesCallCount()).To(Equal(0))
@@ -129,9 +128,9 @@ var _ = Describe("CredentialReferences", func() {
 
 					fakeService.ListDeployedProductCredentialsReturns(api.CredentialReferencesOutput{}, errors.New("could not fetch credential references"))
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
-					})
+					}, nil)
 					Expect(err).To(MatchError(ContainSubstring("failed to list credential references: could not fetch credential references")))
 
 					Expect(fakePresenter.PresentCredentialReferencesCallCount()).To(Equal(0))
@@ -145,25 +144,14 @@ var _ = Describe("CredentialReferences", func() {
 						errors.New("could not fetch deployed products"))
 
 					command := commands.NewCredentialReferences(fakeService, fakePresenter, logger)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
-					})
+					}, nil)
 					Expect(err).To(MatchError(ContainSubstring("failed to list credential references: could not fetch deployed products")))
 
 					Expect(fakePresenter.PresentCredentialReferencesCallCount()).To(Equal(0))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewCredentialReferences(nil, nil, nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This authenticated command lists credential references for deployed products.",
-				ShortDescription: "list credential references for a deployed product",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

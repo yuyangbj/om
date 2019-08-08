@@ -3,6 +3,7 @@ package interpolate_test
 import (
 	"github.com/pivotal-cf/om/interpolate"
 	"io/ioutil"
+	"os"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -27,7 +28,7 @@ var _ = Describe("Execute", func() {
 		It("returns that specific value", func() {
 			contents, err := interpolate.Execute(interpolate.Options{
 				TemplateFile: writeFile(`{name: Bob}`),
-				Path: "/name",
+				Path:         "/name",
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(contents)).To(Equal("Bob\n"))
@@ -36,7 +37,7 @@ var _ = Describe("Execute", func() {
 		It("errors with an invalid path", func() {
 			_, err := interpolate.Execute(interpolate.Options{
 				TemplateFile: writeFile(`{name: Bob}`),
-				Path: "/age",
+				Path:         "/age",
 			})
 			Expect(err).To(HaveOccurred())
 		})
@@ -46,7 +47,7 @@ var _ = Describe("Execute", func() {
 		It("supports variables with a prefix", func() {
 			contents, err := interpolate.Execute(interpolate.Options{
 				TemplateFile: writeFile(`{name: ((name))}`),
-				VarsEnvs: []string{"PREFIX"},
+				VarsEnvs:     []string{"PREFIX"},
 				EnvironFunc: func() []string {
 					return []string{"PREFIX_name=Bob"}
 				},
@@ -58,7 +59,7 @@ var _ = Describe("Execute", func() {
 		It("errors with an invalid environment variable definition", func() {
 			_, err := interpolate.Execute(interpolate.Options{
 				TemplateFile: writeFile(`{name: ((name))}`),
-				VarsEnvs: []string{"PREFIX"},
+				VarsEnvs:     []string{"PREFIX"},
 				EnvironFunc: func() []string {
 					return []string{"PREFIX_name"}
 				},
@@ -70,7 +71,7 @@ var _ = Describe("Execute", func() {
 		It("errors when the environment variable is invalid YAML", func() {
 			_, err := interpolate.Execute(interpolate.Options{
 				TemplateFile: writeFile(`{name: ((name))}`),
-				VarsEnvs: []string{"PREFIX"},
+				VarsEnvs:     []string{"PREFIX"},
 				EnvironFunc: func() []string {
 					return []string{"PREFIX_name={]"}
 				},
@@ -82,7 +83,7 @@ var _ = Describe("Execute", func() {
 		It("modifies a number if it has been quoted", func() {
 			contents, err := interpolate.Execute(interpolate.Options{
 				TemplateFile: writeFile(`{age: ((age))}`),
-				VarsEnvs: []string{"PREFIX"},
+				VarsEnvs:     []string{"PREFIX"},
 				EnvironFunc: func() []string {
 					return []string{`PREFIX_age="123"`}
 				},
@@ -94,7 +95,7 @@ var _ = Describe("Execute", func() {
 		It("handles multiline environment variables", func() {
 			contents, err := interpolate.Execute(interpolate.Options{
 				TemplateFile: writeFile(`{name: ((name))}`),
-				VarsEnvs: []string{"PREFIX"},
+				VarsEnvs:     []string{"PREFIX"},
 				EnvironFunc: func() []string {
 					return []string{"PREFIX_name=some\nmulti\nline\nvalue"}
 				},
@@ -106,7 +107,7 @@ var _ = Describe("Execute", func() {
 		It("handles environment variables that are objects", func() {
 			contents, err := interpolate.Execute(interpolate.Options{
 				TemplateFile: writeFile(`{name: ((name))}`),
-				VarsEnvs: []string{"PREFIX"},
+				VarsEnvs:     []string{"PREFIX"},
 				EnvironFunc: func() []string {
 					return []string{"PREFIX_name={some: value}"}
 				},
@@ -118,8 +119,8 @@ var _ = Describe("Execute", func() {
 		It("allows vars files to override environment variables", func() {
 			contents, err := interpolate.Execute(interpolate.Options{
 				TemplateFile: writeFile(`{age: ((age))}`),
-				VarsFiles: []string{writeFile(`age: 456`)},
-				VarsEnvs: []string{"PREFIX"},
+				VarsFiles:    []string{writeFile(`age: 456`)},
+				VarsEnvs:     []string{"PREFIX"},
 				EnvironFunc: func() []string {
 					return []string{`PREFIX_age="123"`}
 				},
@@ -133,7 +134,7 @@ var _ = Describe("Execute", func() {
 		It("supports loading vars from files", func() {
 			contents, err := interpolate.Execute(interpolate.Options{
 				TemplateFile: writeFile(`{name: ((username))}`),
-				VarsFiles: []string{writeFile(`username: Bob`)},
+				VarsFiles:    []string{writeFile(`username: Bob`)},
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(contents).To(MatchYAML(`name: Bob`))
@@ -145,7 +146,6 @@ var _ = Describe("Execute", func() {
 				VarsFiles: []string{
 					writeFile(`username: Bob`),
 					writeFile(`username: Susie`),
-
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -155,8 +155,8 @@ var _ = Describe("Execute", func() {
 		It("allows individual vars to override vars files", func() {
 			contents, err := interpolate.Execute(interpolate.Options{
 				TemplateFile: writeFile(`{name: ((username))}`),
-				VarsFiles: []string{writeFile(`username: Bob`)},
-				Vars: []string{"username=Susie"},
+				VarsFiles:    []string{writeFile(`username: Bob`)},
+				Vars:         []string{"username=Susie"},
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(contents).To(MatchYAML(`name: Susie`))
@@ -167,7 +167,7 @@ var _ = Describe("Execute", func() {
 		It("supports ops file modifications", func() {
 			contents, err := interpolate.Execute(interpolate.Options{
 				TemplateFile: writeFile(`{name: Susie}`),
-				OpsFiles: []string{writeFile(`[{type: replace, path: /name, value: Bob}]`)},
+				OpsFiles:     []string{writeFile(`[{type: replace, path: /name, value: Bob}]`)},
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(contents).To(MatchYAML(`name: Bob`))
@@ -176,11 +176,150 @@ var _ = Describe("Execute", func() {
 
 	It("fails when no variables are provided", func() {
 		_, err := interpolate.Execute(interpolate.Options{
-			TemplateFile: writeFile(`{name: ((username))}`),
+			TemplateFile:  writeFile(`{name: ((username))}`),
 			ExpectAllKeys: true,
 		})
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(Equal("Expected to find variables: username"))
+	})
+})
+
+var _ = Describe("FromConfigFile", func() {
+	It("does nothing if the struct does not have the ConfigFile field", func() {
+		config := struct{}{}
+		err := interpolate.FromConfigFile(&config, nil, nil)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	When("ConfgileFile is defined on Options", func() {
+		type options struct {
+			ConfigFile string
+			VarsFile   []string
+			VarsEnv    []string
+			Vars       []string
+			Name       string `long:"name"`
+		}
+		type config struct {
+			Options options
+		}
+
+		It("reads the config file and parses args into the struct", func() {
+			c := config{
+				Options: options{
+					ConfigFile: writeFile(`name: Bob`),
+				},
+			}
+			err := interpolate.FromConfigFile(&c, nil, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Options.Name).To(Equal("Bob"))
+		})
+
+		It("can read values from vars-files", func() {
+			c := config{
+				Options: options{
+					ConfigFile: writeFile(`name: ((name))`),
+					VarsFile:   []string{writeFile(`name: Bob`)},
+				},
+			}
+			err := interpolate.FromConfigFile(&c, nil, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Options.Name).To(Equal("Bob"))
+		})
+
+		It("can read values from vars", func() {
+			c := config{
+				Options: options{
+					ConfigFile: writeFile(`name: ((name))`),
+					Vars:       []string{`name=Bob`},
+				},
+			}
+			err := interpolate.FromConfigFile(&c, nil, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Options.Name).To(Equal("Bob"))
+		})
+
+		It("can read values from vars-env", func() {
+			c := config{
+				Options: options{
+					ConfigFile: writeFile(`name: ((name))`),
+					VarsEnv:    []string{`OM_VAR`},
+				},
+			}
+			err := os.Setenv("OM_VAR_name", "Bob")
+			Expect(err).NotTo(HaveOccurred())
+			defer os.Unsetenv("OM_VAR_name")
+
+			err = interpolate.FromConfigFile(&c, os.Environ, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Options.Name).To(Equal("Bob"))
+		})
+
+		It("does nothing if the config file is not defined", func() {
+			c := config{}
+			err := interpolate.FromConfigFile(&c, nil, []string{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Options.Name).To(Equal(""))
+		})
+	})
+
+	When("ConfigFile is a defined field", func() {
+		type config struct {
+			ConfigFile string
+			VarsFile   []string
+			VarsEnv    []string
+			Vars       []string
+			Name       string `long:"name"`
+		}
+
+		It("reads the config file and parses args into the struct", func() {
+			c := config{
+				ConfigFile: writeFile(`name: Bob`),
+			}
+			err := interpolate.FromConfigFile(&c, nil, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Name).To(Equal("Bob"))
+		})
+
+		It("can read values from vars-files", func() {
+			c := config{
+				ConfigFile: writeFile(`name: ((name))`),
+				VarsFile:   []string{writeFile(`name: Bob`)},
+			}
+			err := interpolate.FromConfigFile(&c, nil, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Name).To(Equal("Bob"))
+		})
+
+		It("can read values from vars", func() {
+			c := config{
+				ConfigFile: writeFile(`name: ((name))`),
+				Vars:   []string{`name=Bob`},
+			}
+			err := interpolate.FromConfigFile(&c, nil, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Name).To(Equal("Bob"))
+		})
+
+		It("can read values from vars-env", func() {
+			c := config{
+				ConfigFile: writeFile(`name: ((name))`),
+				VarsEnv:   []string{`OM_VAR`},
+			}
+			err := os.Setenv("OM_VAR_name", "Bob")
+			Expect(err).NotTo(HaveOccurred())
+			defer os.Unsetenv("OM_VAR_name")
+
+			err = interpolate.FromConfigFile(&c, os.Environ, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Name).To(Equal("Bob"))
+		})
+
+		It("does nothing if the config file is not defined", func() {
+			c := config{}
+			err := interpolate.FromConfigFile(&c, nil, []string{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Name).To(Equal(""))
+		})
 	})
 })
 

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -36,9 +35,9 @@ var _ = Describe("StagedConfig", func() {
 
 		It("writes a config file to stdout", func() {
 			command := commands.NewStagedConfig(fakeService, logger)
-			err := command.Execute([]string{
+			err := executeCommand(command, []string{
 				"--product-name", "some-product",
-			})
+			}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.GetStagedProductByNameCallCount()).To(Equal(1))
@@ -91,10 +90,10 @@ errand-config:
 		Context("when --include-placeholders is used", func() {
 			It("replaces *** with interpolatable placeholders and removes non-configurable properties", func() {
 				command := commands.NewStagedConfig(fakeService, logger)
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--product-name", "some-product",
 					"--include-placeholders",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PrintlnCallCount()).To(Equal(1))
@@ -175,10 +174,10 @@ errand-config:
 
 			It("includes secret values in the output", func() {
 				command := commands.NewStagedConfig(fakeService, logger)
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--product-name", "some-product",
 					"--include-credentials",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeService.GetDeployedProductCredentialCallCount()).To(Equal(7))
@@ -273,10 +272,10 @@ errand-config:
 				})
 				It("errors with a helpful message to the operator", func() {
 					command := commands.NewStagedConfig(fakeService, logger)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
 						"--include-credentials",
-					})
+					}, nil)
 					Expect(err).To(MatchError("cannot retrieve credentials for product 'some-product': deploy the product and retry"))
 				})
 			})
@@ -291,10 +290,10 @@ errand-config:
 
 				It("returns an error", func() {
 					command := commands.NewStagedConfig(fakeService, logger)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
 						"--include-credentials",
-					})
+					}, nil)
 					Expect(err).To(MatchError("some-error"))
 				})
 			})
@@ -309,10 +308,10 @@ errand-config:
 
 				It("returns an error", func() {
 					command := commands.NewStagedConfig(fakeService, logger)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
 						"--include-credentials",
-					})
+					}, nil)
 					Expect(err).To(MatchError("some-error"))
 				})
 			})
@@ -323,16 +322,16 @@ errand-config:
 			Context("when an unknown flag is provided", func() {
 				It("returns an error", func() {
 					command := commands.NewStagedConfig(fakeService, logger)
-					err := command.Execute([]string{"--badflag"})
-					Expect(err).To(MatchError("could not parse staged-config flags: flag provided but not defined: -badflag"))
+					err := executeCommand(command, []string{"--badflag"}, nil)
+					Expect(err).To(MatchError("unknown flag `badflag'"))
 				})
 			})
 
 			Context("when product name is not provided", func() {
 				It("returns an error and prints out usage", func() {
 					command := commands.NewStagedConfig(fakeService, logger)
-					err := command.Execute([]string{})
-					Expect(err).To(MatchError("could not parse staged-config flags: missing required flag \"--product-name\""))
+					err := executeCommand(command, []string{}, nil)
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--product-name"))
 				})
 			})
 
@@ -343,9 +342,9 @@ errand-config:
 
 				It("returns an error", func() {
 					command := commands.NewStagedConfig(fakeService, logger)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
-					})
+					}, nil)
 					Expect(err).To(MatchError("some-error"))
 				})
 			})
@@ -357,9 +356,9 @@ errand-config:
 
 				It("returns an error", func() {
 					command := commands.NewStagedConfig(fakeService, logger)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
-					})
+					}, nil)
 					Expect(err).To(MatchError("some-error"))
 				})
 			})
@@ -371,9 +370,9 @@ errand-config:
 
 				It("returns an error", func() {
 					command := commands.NewStagedConfig(fakeService, logger)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
-					})
+					}, nil)
 					Expect(err).To(MatchError("some-error"))
 				})
 			})
@@ -385,9 +384,9 @@ errand-config:
 
 				It("returns an error", func() {
 					command := commands.NewStagedConfig(fakeService, logger)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
-					})
+					}, nil)
 					Expect(err).To(MatchError("some-error"))
 				})
 			})
@@ -399,26 +398,13 @@ errand-config:
 
 				It("returns an error", func() {
 					command := commands.NewStagedConfig(fakeService, logger)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
-					})
+					}, nil)
 					Expect(err).To(MatchError("some-error"))
 				})
 			})
 
-		})
-
-		Describe("Usage", func() {
-			It("returns usage information for the command", func() {
-
-				command := commands.NewStagedConfig(nil, nil)
-
-				Expect(command.Usage()).To(Equal(jhanda.Usage{
-					Description:      "This command generates a config from a staged product that can be passed in to om configure-product (Note: credentials are not available and will appear as '***')",
-					ShortDescription: "**EXPERIMENTAL** generates a config from a staged product",
-					Flags:            command.Options,
-				}))
-			})
 		})
 	})
 
@@ -434,9 +420,9 @@ errand-config:
 				}, nil)
 
 			command := commands.NewStagedConfig(fakeService, logger)
-			err := command.Execute([]string{
+			err := executeCommand(command, []string{
 				"--product-name", "some-product",
-			})
+			}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(logger.PrintlnCallCount()).To(Equal(1))
@@ -491,9 +477,9 @@ errand-config:
 
 			It("will include selected_option if available", func() {
 				command := commands.NewStagedConfig(fakeService, logger)
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--product-name", "some-product",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PrintlnCallCount()).To(Equal(1))
@@ -520,9 +506,9 @@ errand-config:
 
 			It("will include properties dependent on the selected selector if available", func() {
 				command := commands.NewStagedConfig(fakeService, logger)
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--product-name", "some-product",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PrintlnCallCount()).To(Equal(1))

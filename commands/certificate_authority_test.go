@@ -3,7 +3,6 @@ package commands_test
 import (
 	"errors"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -15,7 +14,7 @@ import (
 
 var _ = Describe("Certificate Authority", func() {
 	var (
-		certificateAuthority              commands.CertificateAuthority
+		certificateAuthority              *commands.CertificateAuthority
 		fakeCertificateAuthoritiesService *fakes.CertificateAuthoritiesService
 		fakePresenter                     *presenterfakes.FormattedPresenter
 		fakeLogger                        *fakes.Logger
@@ -54,9 +53,9 @@ var _ = Describe("Certificate Authority", func() {
 
 	Describe("Execute", func() {
 		It("requests CAs from the server and prints to a table", func() {
-			err := certificateAuthority.Execute([]string{
+			err := executeCommand(certificateAuthority, []string{
 				"--id", "other-guid",
-			})
+			}, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(fakeCertificateAuthoritiesService.ListCertificateAuthoritiesCallCount()).To(Equal(1))
@@ -76,10 +75,10 @@ var _ = Describe("Certificate Authority", func() {
 
 		Context("when the cert-pem flag is provided", func() {
 			It("logs the cert pem to the logger", func() {
-				err := certificateAuthority.Execute([]string{
+				err := executeCommand(certificateAuthority, []string{
 					"--id", "other-guid",
 					"--cert-pem",
-				})
+				}, nil)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(fakePresenter.PresentCertificateAuthorityCallCount()).To(Equal(0))
 				Expect(fakeLogger.PrintlnCallCount()).To(Equal(1))
@@ -90,10 +89,10 @@ var _ = Describe("Certificate Authority", func() {
 
 		Context("when the format flag is provided", func() {
 			It("calls the presenter to set the json format", func() {
-				err := certificateAuthority.Execute([]string{
+				err := executeCommand(certificateAuthority, []string{
 					"--id", "other-guid",
 					"--format", "json",
-				})
+				}, nil)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(fakePresenter.SetFormatCallCount()).To(Equal(1))
 				Expect(fakePresenter.SetFormatArgsForCall(0)).To(Equal("json"))
@@ -104,11 +103,11 @@ var _ = Describe("Certificate Authority", func() {
 		Context("failure cases", func() {
 			Context("when the args cannot parsed", func() {
 				It("returns an error", func() {
-					err := certificateAuthority.Execute([]string{
+					err := executeCommand(certificateAuthority, []string{
 						"--bogus", "nothing",
-					})
+					}, nil)
 					Expect(err).To(MatchError(
-						"could not parse certificate-authority flags: flag provided but not defined: -bogus",
+						"unknown flag `bogus'",
 					))
 				})
 			})
@@ -122,38 +121,29 @@ var _ = Describe("Certificate Authority", func() {
 				})
 
 				It("returns an error", func() {
-					err := certificateAuthority.Execute([]string{
+					err := executeCommand(certificateAuthority, []string{
 						"--id", "some-guid",
-					})
+					}, nil)
 					Expect(err).To(MatchError("service failed"))
 				})
 			})
 
 			Context("when the --id flag is missing", func() {
 				It("returns an error", func() {
-					err := certificateAuthority.Execute([]string{})
-					Expect(err).To(MatchError(`could not parse certificate-authority flags: missing required flag "--id"`))
+					err := executeCommand(certificateAuthority, []string{}, nil)
+					Expect(err).To(MatchError("the required flag `--id' was not specified"))
 				})
 			})
 
 			Context("when the request certificate authority is not found", func() {
 				It("returns an error", func() {
-					err := certificateAuthority.Execute([]string{
+					err := executeCommand(certificateAuthority, []string{
 						"--id", "doesnt-exist",
-					})
+					}, nil)
 					Expect(err).To(MatchError(`could not find a certificate authority with ID: "doesnt-exist"`))
 				})
 			})
 		})
 	})
 
-	Describe("Usage", func() {
-		It("returns usage", func() {
-			Expect(certificateAuthority.Usage()).To(Equal(jhanda.Usage{
-				Description:      "prints requested certificate authority",
-				ShortDescription: "prints requested certificate authority",
-				Flags:            certificateAuthority.Options,
-			}))
-		})
-	})
 })

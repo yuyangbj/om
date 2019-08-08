@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 )
 
@@ -22,7 +21,7 @@ type ConfigureAuthentication struct {
 		ConfigFile             string   `long:"config"                short:"c"                    description:"path to yml file for configuration (keys must match the following command line flags)"`
 		Username               string   `long:"username"              short:"u"  env:"OM_USERNAME" description:"admin username" required:"true"`
 		Password               string   `long:"password"              short:"p"  env:"OM_PASSWORD" description:"admin password" required:"true"`
-		DecryptionPassphrase   string   `long:"decryption-passphrase" short:"dp"                   description:"passphrase used to encrypt the installation" required:"true"`
+		DecryptionPassphrase   string   `long:"decryption-passphrase" short:"d"                   description:"passphrase used to encrypt the installation" required:"true"`
 		HTTPProxyURL           string   `long:"http-proxy-url"                                     description:"proxy for outbound HTTP network traffic"`
 		HTTPSProxyURL          string   `long:"https-proxy-url"                                    description:"proxy for outbound HTTPS network traffic"`
 		NoProxy                string   `long:"no-proxy"                                           description:"comma-separated list of hosts that do not go through the proxy"`
@@ -31,8 +30,8 @@ type ConfigureAuthentication struct {
 	}
 }
 
-func NewConfigureAuthentication(service configureAuthenticationService, logger logger) ConfigureAuthentication {
-	return ConfigureAuthentication{
+func NewConfigureAuthentication(service configureAuthenticationService, logger logger) *ConfigureAuthentication {
+	return &ConfigureAuthentication{
 		service: service,
 		logger:  logger,
 	}
@@ -40,11 +39,6 @@ func NewConfigureAuthentication(service configureAuthenticationService, logger l
 
 func (ca ConfigureAuthentication) Execute(args []string) error {
 	var opsManUaaClientMsg string
-
-	err := loadConfigFile(args, &ca.Options, nil)
-	if err != nil {
-		return fmt.Errorf("could not parse configure-authentication flags: %s", err)
-	}
 
 	ensureAvailabilityOutput, err := ca.service.EnsureAvailability(api.EnsureAvailabilityInput{})
 	if err != nil {
@@ -116,12 +110,4 @@ This is only supported in OpsManager 2.5 and up.
 	ca.logger.Printf(opsManUaaClientMsg)
 
 	return nil
-}
-
-func (ca ConfigureAuthentication) Usage() jhanda.Usage {
-	return jhanda.Usage{
-		Description:      "This unauthenticated command helps setup the internal userstore authentication mechanism for your Ops Manager.",
-		ShortDescription: "configures Ops Manager with an internal userstore and admin user account",
-		Flags:            ca.Options,
-	}
 }

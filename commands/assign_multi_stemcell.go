@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"strings"
 )
@@ -24,29 +23,15 @@ type assignMultiStemcellService interface {
 	Info() (api.Info, error)
 }
 
-func NewAssignMultiStemcell(service assignMultiStemcellService, logger logger) AssignMultiStemcell {
-	return AssignMultiStemcell{
+func NewAssignMultiStemcell(service assignMultiStemcellService, logger logger) *AssignMultiStemcell {
+	return &AssignMultiStemcell{
 		service: service,
 		logger:  logger,
 	}
 }
 
-func (as AssignMultiStemcell) Usage() jhanda.Usage {
-	return jhanda.Usage{
-		Description: "This command will assign multiple already uploaded stemcells to a specific product in Ops Manager 2.6+.\n" +
-			"It is recommended to use \"upload-stemcell --floating=false\" before using this command.",
-		ShortDescription: "assigns multiple uploaded stemcells to a product in the targeted Ops Manager 2.6+",
-		Flags:            as.Options,
-	}
-}
-
 func (as AssignMultiStemcell) Execute(args []string) error {
-	err := loadConfigFile(args, &as.Options, nil)
-	if err != nil {
-		return fmt.Errorf("could not parse assign-stemcell flags: %s", err)
-	}
-
-	err = as.validateOpsManVersion()
+	err := as.validateOpsManVersion()
 	if err != nil {
 		return err
 	}

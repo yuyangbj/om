@@ -3,7 +3,6 @@ package acceptance
 import (
 	"os/exec"
 
-	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 
 	. "github.com/onsi/ginkgo"
@@ -12,14 +11,14 @@ import (
 
 var _ = Describe("global flags", func() {
 	Context("when provided an unknown global flag", func() {
-		It("prints the usage", func() {
+		FIt("prints the usage", func() {
 			cmd := exec.Command(pathToMain, "-?")
 
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(session).Should(gexec.Exit(1))
-			Expect(session.Err).Should(gbytes.Say("flag provided but not defined: -?"))
+			Expect(string(session.Err.Contents())).To(ContainSubstring("unknown flag `?'"))
 		})
 	})
 

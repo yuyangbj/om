@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/interpolate"
 	"io/ioutil"
 	"os"
@@ -23,18 +22,14 @@ type Interpolate struct {
 	}
 }
 
-func NewInterpolate(environFunc func() []string, logger logger) Interpolate {
-	return Interpolate{
+func NewInterpolate(environFunc func() []string, logger logger) *Interpolate {
+	return &Interpolate{
 		environFunc: environFunc,
 		logger:      logger,
 	}
 }
 
 func (c Interpolate) Execute(args []string) error {
-	if _, err := jhanda.Parse(&c.Options, args); err != nil {
-		return fmt.Errorf("could not parse interpolate flags: %s", err)
-	}
-
 	input := os.Stdin
 	info, err := input.Stat()
 	if err != nil {
@@ -80,7 +75,7 @@ func (c Interpolate) Execute(args []string) error {
 		VarsEnvs:      c.Options.VarsEnv,
 		OpsFiles:      c.Options.OpsFile,
 		ExpectAllKeys: expectAllKeys,
-		Path: c.Options.Path,
+		Path:          c.Options.Path,
 	})
 	if err != nil {
 		splitErr := strings.Split(err.Error(), ": ")
@@ -90,12 +85,4 @@ func (c Interpolate) Execute(args []string) error {
 	c.logger.Println(string(bytes))
 
 	return nil
-}
-
-func (c Interpolate) Usage() jhanda.Usage {
-	return jhanda.Usage{
-		Description:      "Interpolates variables into a manifest",
-		ShortDescription: "Interpolates variables into a manifest",
-		Flags:            c.Options,
-	}
 }

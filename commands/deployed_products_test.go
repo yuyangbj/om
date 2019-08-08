@@ -6,7 +6,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -17,7 +16,7 @@ var _ = Describe("DeployedProducts", func() {
 	var (
 		presenter   *presenterfakes.FormattedPresenter
 		fakeService *fakes.DeployedProductsService
-		command     commands.DeployedProducts
+		command     *commands.DeployedProducts
 	)
 
 	BeforeEach(func() {
@@ -47,7 +46,7 @@ var _ = Describe("DeployedProducts", func() {
 		})
 
 		It("lists the deployed products", func() {
-			err := command.Execute([]string{})
+			err := executeCommand(command, []string{}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.GetDiagnosticReportCallCount()).To(Equal(1))
@@ -60,7 +59,7 @@ var _ = Describe("DeployedProducts", func() {
 
 		Context("when the format flag is provided", func() {
 			It("sets the format on the presenter", func() {
-				err := command.Execute([]string{"--format", "json"})
+				err := executeCommand(command, []string{"--format", "json"}, nil)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(presenter.SetFormatArgsForCall(0)).To(Equal("json"))
 			})
@@ -69,8 +68,8 @@ var _ = Describe("DeployedProducts", func() {
 		Context("failure cases", func() {
 			Context("when an unknown flag is passed", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{"--unknown-flag"})
-					Expect(err).To(MatchError("could not parse deployed-products flags: flag provided but not defined: -unknown-flag"))
+					err := executeCommand(command, []string{"--unknown-flag"}, nil)
+					Expect(err).To(MatchError("unknown flag `unknown-flag'"))
 				})
 			})
 
@@ -78,21 +77,10 @@ var _ = Describe("DeployedProducts", func() {
 				It("returns an error", func() {
 					fakeService.GetDiagnosticReportReturns(api.DiagnosticReport{}, errors.New("beep boop"))
 
-					err := command.Execute([]string{})
+					err := executeCommand(command, []string{}, nil)
 					Expect(err).To(MatchError("failed to retrieve deployed products beep boop"))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewDeployedProducts(nil, nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This authenticated command lists all deployed products.",
-				ShortDescription: "lists deployed products",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

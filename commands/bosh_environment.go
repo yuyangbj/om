@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/renderers"
 )
@@ -36,8 +35,13 @@ type rendererFactory interface {
 	Create(shellType string) (renderers.Renderer, error)
 }
 
-func NewBoshEnvironment(service boshEnvironmentService, logger logger, opsmanHost string, rendererFactory rendererFactory) BoshEnvironment {
-	return BoshEnvironment{
+func NewBoshEnvironment(
+	service boshEnvironmentService,
+	logger logger,
+	opsmanHost string,
+	rendererFactory rendererFactory,
+) *BoshEnvironment {
+	return &BoshEnvironment{
 		service:         service,
 		logger:          logger,
 		rendererFactory: rendererFactory,
@@ -59,10 +63,6 @@ func (be BoshEnvironment) stripTrailingSlash(host string) string {
 }
 
 func (be BoshEnvironment) Execute(args []string) error {
-	if _, err := jhanda.Parse(&be.Options, args); err != nil {
-		return fmt.Errorf("could not parse bosh-env flags: %s", err)
-	}
-
 	renderer, err := be.rendererFactory.Create(be.Options.ShellType)
 	if err != nil {
 		return err
@@ -111,14 +111,6 @@ func (be BoshEnvironment) Execute(args []string) error {
 	be.renderVariables(renderer, variables)
 
 	return nil
-}
-
-func (be BoshEnvironment) Usage() jhanda.Usage {
-	return jhanda.Usage{
-		Description:      "This prints bosh environment variables to target bosh director. You can invoke it directly to see its output, or use it directly with an evaluate-type command:\nOn posix system: eval \"$(om bosh-env)\"\nOn powershell: iex $(om bosh-env | Out-String)",
-		ShortDescription: "prints bosh environment variables",
-		Flags:            be.Options,
-	}
 }
 
 func (be BoshEnvironment) renderVariables(renderer renderers.Renderer, variables map[string]string) {

@@ -3,7 +3,6 @@ package commands
 import (
 	"fmt"
 	"github.com/fatih/color"
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/presenters"
 )
@@ -24,8 +23,8 @@ type preDeployCheckService interface {
 	ListAllPendingProductChanges() ([]api.PendingProductChangesOutput, error)
 }
 
-func NewPreDeployCheck(presenter presenters.FormattedPresenter, service preDeployCheckService, logger logger) PreDeployCheck {
-	return PreDeployCheck{
+func NewPreDeployCheck(presenter presenters.FormattedPresenter, service preDeployCheckService, logger logger) *PreDeployCheck {
+	return &PreDeployCheck{
 		service:   service,
 		presenter: presenter,
 		logger:    logger,
@@ -34,10 +33,6 @@ func NewPreDeployCheck(presenter presenters.FormattedPresenter, service preDeplo
 
 func (pc PreDeployCheck) Execute(args []string) error {
 	var errorBuffer []string
-
-	if _, err := jhanda.Parse(&pc.Options, args); err != nil {
-		return fmt.Errorf("could not parse pending-changes flags: %s", err)
-	}
 
 	pc.logger.Println("Scanning OpsManager now ...\n")
 
@@ -180,12 +175,4 @@ func (pc PreDeployCheck) determineProductErrors(productOutput api.PendingProduct
 	}
 
 	return errBuffer
-}
-
-func (pc PreDeployCheck) Usage() jhanda.Usage {
-	return jhanda.Usage{
-		Description:      "**EXPERIMENTAL** This authenticated command lists all pending changes.",
-		ShortDescription: "**EXPERIMENTAL** lists pending changes",
-		Flags:            pc.Options,
-	}
 }

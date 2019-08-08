@@ -3,7 +3,6 @@ package commands_test
 import (
 	"errors"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -19,7 +18,7 @@ var _ = Describe("Credentials", func() {
 		fakePresenter *presenterfakes.FormattedPresenter
 		logger        *fakes.Logger
 
-		command commands.Credentials
+		command *commands.Credentials
 	)
 
 	BeforeEach(func() {
@@ -51,10 +50,10 @@ var _ = Describe("Credentials", func() {
 
 		Describe("outputting all values for a credential", func() {
 			It("outputs the credentials alphabetically", func() {
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--product-name", "some-product",
 					"--credential-reference", ".properties.some-credentials",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeService.GetDeployedProductCredentialCallCount()).To(Equal(1))
@@ -76,11 +75,11 @@ var _ = Describe("Credentials", func() {
 
 			Context("when the format flag is provided", func() {
 				It("sets the format on the presenter", func() {
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
 						"--credential-reference", "some-credential",
 						"--format", "json",
-					})
+					}, nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(fakePresenter.SetFormatArgsForCall(0)).To(Equal("json"))
@@ -89,10 +88,10 @@ var _ = Describe("Credentials", func() {
 
 			Context("when the --product-name flag is missing", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--credential-reference", "some-credential",
-					})
-					Expect(err).To(MatchError("could not parse credential-references flags: missing required flag \"--product-name\""))
+					}, nil)
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--product-name"))
 				})
 			})
 
@@ -100,10 +99,10 @@ var _ = Describe("Credentials", func() {
 				It("returns an error", func() {
 					command := commands.NewCredentials(fakeService, fakePresenter, logger)
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
-					})
-					Expect(err).To(MatchError("could not parse credential-references flags: missing required flag \"--credential-reference\""))
+					}, nil)
+					Expect(err.Error()).To(MatchRegexp("the required flag.*--credential-reference"))
 				})
 			})
 
@@ -115,10 +114,10 @@ var _ = Describe("Credentials", func() {
 				It("returns an error", func() {
 					command := commands.NewCredentials(fakeService, fakePresenter, logger)
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
 						"--credential-reference", "some-credential",
-					})
+					}, nil)
 					Expect(err).To(MatchError(ContainSubstring(`failed to fetch credential for "some-credential"`)))
 				})
 			})
@@ -129,10 +128,10 @@ var _ = Describe("Credentials", func() {
 
 					fakeService.GetDeployedProductCredentialReturns(api.GetDeployedProductCredentialOutput{}, errors.New("could not fetch credentials"))
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
 						"--credential-reference", "some-credential",
-					})
+					}, nil)
 					Expect(err).To(MatchError(ContainSubstring(`failed to fetch credential for "some-credential": could not fetch credentials`)))
 
 					Expect(fakePresenter.PresentCredentialsCallCount()).To(Equal(0))
@@ -146,10 +145,10 @@ var _ = Describe("Credentials", func() {
 						errors.New("could not fetch deployed products"))
 
 					command := commands.NewCredentials(fakeService, fakePresenter, logger)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
 						"--credential-reference", "some-credential",
-					})
+					}, nil)
 					Expect(err).To(MatchError(ContainSubstring("failed to fetch credential: could not fetch deployed products")))
 
 					Expect(fakePresenter.PresentCredentialsCallCount()).To(Equal(0))
@@ -165,10 +164,10 @@ var _ = Describe("Credentials", func() {
 						}}, nil)
 
 					command := commands.NewCredentials(fakeService, fakePresenter, logger)
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
 						"--credential-reference", "some-credential",
-					})
+					}, nil)
 					Expect(err).To(MatchError(ContainSubstring(`failed to fetch credential: "some-product" is not deployed`)))
 
 					Expect(fakePresenter.PresentCredentialsCallCount()).To(Equal(0))
@@ -192,11 +191,11 @@ var _ = Describe("Credentials", func() {
 			It("outputs the credential value only", func() {
 				command := commands.NewCredentials(fakeService, fakePresenter, logger)
 
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--product-name", "some-product",
 					"--credential-reference", ".properties.some-credentials",
 					"--credential-field", "password",
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(logger.PrintlnCallCount()).To(Equal(1))
 				Expect(logger.PrintlnArgsForCall(0)[0]).To(Equal("some-password"))
@@ -206,25 +205,14 @@ var _ = Describe("Credentials", func() {
 				It("returns an error", func() {
 					command := commands.NewCredentials(fakeService, fakePresenter, logger)
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--product-name", "some-product",
 						"--credential-reference", "some-credential",
 						"--credential-field", "missing-field",
-					})
+					}, nil)
 					Expect(err).To(MatchError(ContainSubstring(`credential field "missing-field" not found`)))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewCredentials(nil, nil, nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This authenticated command fetches credentials for deployed products.",
-				ShortDescription: "fetch credentials for a deployed product",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

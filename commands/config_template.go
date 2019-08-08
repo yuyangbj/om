@@ -3,7 +3,6 @@ package commands
 import (
 	"fmt"
 	"github.com/pivotal-cf/go-pivnet"
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/configtemplate/generator"
 	"github.com/pivotal-cf/om/configtemplate/metadata"
 	"os"
@@ -51,14 +50,7 @@ func NewConfigTemplate(bp buildProvider) *ConfigTemplate {
 
 //Execute - generates config template and ops files
 func (c *ConfigTemplate) Execute(args []string) error {
-	_, err := jhanda.Parse(
-		&c.Options,
-		args)
-	if err != nil {
-		return fmt.Errorf("could not parse config-template flags: %s", err.Error())
-	}
-
-	_, err = os.Stat(c.Options.OutputDirectory)
+	_, err := os.Stat(c.Options.OutputDirectory)
 	if os.IsNotExist(err) {
 		return fmt.Errorf("output-directory does not exist: %s", c.Options.OutputDirectory)
 	}
@@ -79,12 +71,4 @@ func (c *ConfigTemplate) Execute(args []string) error {
 
 func (c *ConfigTemplate) newMetadataSource() (metadataSource MetadataProvider) {
 	return c.buildProvider(c)
-}
-
-func (c *ConfigTemplate) Usage() jhanda.Usage {
-	return jhanda.Usage{
-		Description:      "**EXPERIMENTAL** this command generates a product configuration template from a .pivotal file on Pivnet",
-		ShortDescription: "**EXPERIMENTAL** generates a config template from a Pivnet product",
-		Flags:            c.Options,
-	}
 }

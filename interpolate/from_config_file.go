@@ -1,10 +1,8 @@
-package commands
+package interpolate
 
 import (
-	"errors"
 	"fmt"
 	"github.com/jessevdk/go-flags"
-	"github.com/pivotal-cf/om/interpolate"
 	"gopkg.in/yaml.v2"
 	"reflect"
 	"strconv"
@@ -14,11 +12,24 @@ import (
 // To use this function, `Config` field must be defined in the command struct being passed in.
 // To load vars, VarsFile and/or VarsEnv must exist in the command struct being passed in.
 // If VarsEnv is used, envFunc must be defined instead of nil
-func loadConfigFile(args []string, command interface{}, envFunc func() []string) error {
-	commandValue := reflect.ValueOf(command).Elem()
-	configFile := commandValue.FieldByName("ConfigFile").String()
+func FromConfigFile(config interface{}, envFunc func() []string, args []string) error {
+	commandValue := reflect.ValueOf(config).Elem()
+	configFileField := commandValue.FieldByName("ConfigFile")
+	if !configFileField.IsValid() {
+		commandValue = commandValue.FieldByName("Options")
+		if !commandValue.IsValid() {
+			return nil
+		}
+
+		configFileField = commandValue.FieldByName("ConfigFile")
+		if !configFileField.IsValid() {
+			return nil
+		}
+	}
+
+	configFile := configFileField.String()
 	if configFile == "" {
-		return errors.New("WHATR")
+		return nil
 	}
 
 	varsFileField := commandValue.FieldByName("VarsFile")
@@ -52,7 +63,7 @@ func loadConfigFile(args []string, command interface{}, envFunc func() []string)
 		}
 	}
 
-	contents, err := interpolate.Execute(interpolate.Options{
+	contents, err := Execute(Options{
 		TemplateFile:  configFile,
 		VarsEnvs:      varsEnv,
 		VarsFiles:     varsField,
@@ -84,7 +95,9 @@ func loadConfigFile(args []string, command interface{}, envFunc func() []string)
 		}
 
 	}
-	fileArgs = append(fileArgs, args...)
-	_, err = flags.ParseArgs(command, fileArgs)
+	if len(args) > 0 {
+		fileArgs = append(fileArgs, args...)
+	}
+	_, err = flags.ParseArgs(config, fileArgs)
 	return err
 }

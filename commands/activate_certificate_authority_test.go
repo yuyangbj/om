@@ -3,10 +3,8 @@ package commands_test
 import (
 	"errors"
 	"fmt"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -16,7 +14,7 @@ var _ = Describe("ActivateCertificateAuthority", func() {
 	var (
 		fakeService *fakes.ActivateCertificateAuthorityService
 		fakeLogger  *fakes.Logger
-		command     commands.ActivateCertificateAuthority
+		command     *commands.ActivateCertificateAuthority
 	)
 
 	BeforeEach(func() {
@@ -27,9 +25,9 @@ var _ = Describe("ActivateCertificateAuthority", func() {
 
 	Describe("Execute", func() {
 		It("activates the specified certificate authority", func() {
-			err := command.Execute([]string{
+			err := executeCommand(command, []string{
 				"--id", "some-certificate-authority-id",
-			})
+			}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeService.ActivateCertificateAuthorityCallCount()).To(Equal(1))
@@ -47,37 +45,26 @@ var _ = Describe("ActivateCertificateAuthority", func() {
 				It("returns an error", func() {
 					fakeService.ActivateCertificateAuthorityReturns(errors.New("failed to activate certificate"))
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--id", "some-certificate-authority-id",
-					})
+					}, nil)
 					Expect(err).To(MatchError("failed to activate certificate"))
 				})
 			})
 
 			Context("when an unknown flag is provided", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{"--badflag"})
-					Expect(err).To(MatchError("could not parse activate-certificate-authority flags: flag provided but not defined: -badflag"))
+					err := executeCommand(command, []string{"--badflag"}, nil)
+					Expect(err).To(MatchError("unknown flag `badflag'"))
 				})
 			})
 
 			Context("when the id flag is not provided", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{})
-					Expect(err).To(MatchError("could not parse activate-certificate-authority flags: missing required flag \"--id\""))
+					err := executeCommand(command, []string{}, nil)
+					Expect(err).To(MatchError("the required flag `--id' was not specified"))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage info", func() {
-			usage := command.Usage()
-			Expect(usage).To(Equal(jhanda.Usage{
-				Description:      "This authenticated command activates an existing certificate authority on the Ops Manager",
-				ShortDescription: "activates a certificate authority on the Ops Manager",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

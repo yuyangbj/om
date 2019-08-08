@@ -3,7 +3,6 @@ package commands_test
 import (
 	"errors"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -20,7 +19,7 @@ var _ = Describe("AvailableProducts", func() {
 		fakePresenter *presenterfakes.FormattedPresenter
 		logger        *fakes.Logger
 
-		command commands.AvailableProducts
+		command *commands.AvailableProducts
 	)
 
 	BeforeEach(func() {
@@ -48,7 +47,7 @@ var _ = Describe("AvailableProducts", func() {
 		})
 
 		It("lists the available products", func() {
-			err := command.Execute([]string{})
+			err := executeCommand(command, []string{}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakePresenter.PresentAvailableProductsCallCount()).To(Equal(1))
@@ -67,7 +66,7 @@ var _ = Describe("AvailableProducts", func() {
 
 		Context("when the json flag is provided", func() {
 			It("sets the format to json on the presenter", func() {
-				err := command.Execute([]string{"--format", "json"})
+				err := executeCommand(command, []string{"--format", "json"}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakePresenter.SetFormatCallCount()).To(Equal(1))
@@ -81,7 +80,7 @@ var _ = Describe("AvailableProducts", func() {
 
 				apService.ListAvailableProductsReturns(api.AvailableProductsOutput{}, nil)
 
-				err := command.Execute([]string{})
+				err := executeCommand(command, []string{}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PrintfArgsForCall(0)).To(Equal("no available products found"))
@@ -95,27 +94,16 @@ var _ = Describe("AvailableProducts", func() {
 
 				apService.ListAvailableProductsReturns(api.AvailableProductsOutput{}, errors.New("blargh"))
 
-				err := command.Execute([]string{})
+				err := executeCommand(command, []string{}, nil)
 				Expect(err).To(MatchError("blargh"))
 			})
 		})
 
 		Context("when an unknown flag is passed", func() {
 			It("returns an error", func() {
-				err := command.Execute([]string{"--unknown-flag"})
-				Expect(err).To(MatchError("could not parse available-products flags: flag provided but not defined: -unknown-flag"))
+				err := executeCommand(command, []string{"--unknown-flag"}, nil)
+				Expect(err).To(MatchError("unknown flag `unknown-flag'"))
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewAvailableProducts(nil, nil, nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This authenticated command lists all available products.",
-				ShortDescription: "list available products",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

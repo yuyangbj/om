@@ -3,7 +3,6 @@ package commands_test
 import (
 	"errors"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -14,7 +13,7 @@ import (
 
 var _ = Describe("StagedManifest", func() {
 	var (
-		command     commands.StagedManifest
+		command     *commands.StagedManifest
 		logger      *fakes.Logger
 		fakeService *fakes.StagedManifestService
 	)
@@ -34,9 +33,9 @@ key: value
 	})
 
 	It("prints the manifest of the staged product", func() {
-		err := command.Execute([]string{
+		err := executeCommand(command, []string{
 			"--product-name", "some-product",
-		})
+		}, nil)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(fakeService.GetStagedProductByNameCallCount()).To(Equal(1))
@@ -55,9 +54,9 @@ key: value
 	Context("failure cases", func() {
 		Context("when an unrecognized flag is passed", func() {
 			It("returns an error", func() {
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--some-unknown-flag", "some-value",
-				})
+				}, nil)
 				Expect(err).To(MatchError(ContainSubstring("could not parse staged-manifest flags")))
 			})
 		})
@@ -66,9 +65,9 @@ key: value
 			It("returns an error", func() {
 				fakeService.GetStagedProductByNameReturns(api.StagedProductsFindOutput{}, errors.New("product find failed"))
 
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--product-name", "some-product",
-				})
+				}, nil)
 				Expect(err).To(MatchError(ContainSubstring("failed to find product: product find failed")))
 			})
 		})
@@ -77,22 +76,11 @@ key: value
 			It("returns an error", func() {
 				fakeService.GetStagedProductManifestReturns("", errors.New("product manifest failed"))
 
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--product-name", "some-product",
-				})
+				}, nil)
 				Expect(err).To(MatchError(ContainSubstring("failed to fetch product manifest: product manifest failed")))
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage info", func() {
-			usage := command.Usage()
-			Expect(usage).To(Equal(jhanda.Usage{
-				Description:      "This authenticated command prints the staged manifest for a product",
-				ShortDescription: "prints the staged manifest for a product",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

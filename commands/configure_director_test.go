@@ -19,7 +19,7 @@ var _ = Describe("ConfigureDirector", func() {
 	var (
 		logger     *fakes.Logger
 		service    *fakes.ConfigureDirectorService
-		command    commands.ConfigureDirector
+		command    *commands.ConfigureDirector
 		err        error
 		config     string
 		configFile *os.File
@@ -226,9 +226,9 @@ vmtypes-configuration:
 		}
 
 		It("configures the director", func() {
-			err := command.Execute([]string{
+			err := executeCommand(command, []string{
 				"--config", configFile.Name(),
-			})
+			}, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			ExpectDirectorToBeConfiguredCorrectly()
@@ -237,9 +237,9 @@ vmtypes-configuration:
 		When("configuring vm types", func() {
 			Context("with custom vm types only", func() {
 				It("configures the vm types specifically", func() {
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--config", configFile.Name(),
-					})
+					}, nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(logger.PrintfCallCount()).To(Equal(22))
@@ -262,9 +262,9 @@ vmtypes-configuration:
 					_, err = newConfigFile.WriteString(simpleConfig)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--config", newConfigFile.Name(),
-					})
+					}, nil)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("if custom_types = true, vm_types must not be empty"))
 				})
@@ -317,9 +317,9 @@ vmtypes-configuration:
 					_, err = newConfigFile.WriteString(simpleConfig)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--config", newConfigFile.Name(),
-					})
+					}, nil)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
@@ -347,9 +347,9 @@ vmtypes-configuration:
 					_, err = newConfigFile.WriteString(simpleConfig)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--config", newConfigFile.Name(),
-					})
+					}, nil)
 					Expect(err).To(HaveOccurred())
 				})
 			})
@@ -381,9 +381,9 @@ vmtypes-configuration:
 					_, err = newConfigFile.WriteString(simpleConfig)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--config", newConfigFile.Name(),
-					})
+					}, nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(logger.PrintfCallCount()).To(Equal(1))
@@ -413,9 +413,9 @@ vmtypes-configuration:
 					_, err = newConfigFile.WriteString(simpleConfig)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--config", newConfigFile.Name(),
-					})
+					}, nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(logger.PrintfCallCount()).To(Equal(1))
@@ -440,9 +440,9 @@ vmtypes-configuration:
 					Expect(err).ToNot(HaveOccurred())
 					Expect(configFile.Close()).ToNot(HaveOccurred())
 
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--config", configFile.Name(),
-					})
+					}, nil)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring(`could not be parsed as valid configuration:`))
 				})
@@ -550,9 +550,9 @@ vmtypes-configuration:
 					Expect(err).ToNot(HaveOccurred())
 					Expect(configFile.Close()).ToNot(HaveOccurred())
 
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--config", configFile.Name(),
-					})
+					}, nil)
 					Expect(err).NotTo(HaveOccurred())
 
 					ExpectDirectorToBeConfiguredCorrectly()
@@ -568,9 +568,9 @@ vmtypes-configuration:
 							Expect(err).ToNot(HaveOccurred())
 							Expect(configFile.Close()).ToNot(HaveOccurred())
 
-							err = command.Execute([]string{
+							err = executeCommand(command, []string{
 								"--config", configFile.Name(),
-							})
+							}, nil)
 							Expect(err).To(HaveOccurred())
 							Expect(err.Error()).To(ContainSubstring("Expected to find variables"))
 						})
@@ -590,10 +590,10 @@ vmtypes-configuration:
 							Expect(err).ToNot(HaveOccurred())
 							Expect(varsFile.Close()).ToNot(HaveOccurred())
 
-							err = command.Execute([]string{
+							err = executeCommand(command, []string{
 								"--config", configFile.Name(),
 								"--vars-file", varsFile.Name(),
-							})
+							}, nil)
 							Expect(err).NotTo(HaveOccurred())
 
 							ExpectDirectorToBeConfiguredCorrectly()
@@ -608,10 +608,10 @@ vmtypes-configuration:
 							Expect(err).ToNot(HaveOccurred())
 							Expect(configFile.Close()).ToNot(HaveOccurred())
 
-							err = command.Execute([]string{
+							err = executeCommand(command, []string{
 								"--config", configFile.Name(),
 								"--var", "network_name=network",
-							})
+							}, nil)
 							Expect(err).NotTo(HaveOccurred())
 
 							ExpectDirectorToBeConfiguredCorrectly()
@@ -632,10 +632,10 @@ vmtypes-configuration:
 							Expect(err).ToNot(HaveOccurred())
 							Expect(configFile.Close()).ToNot(HaveOccurred())
 
-							err = command.Execute([]string{
+							err = executeCommand(command, []string{
 								"--config", configFile.Name(),
 								"--vars-env", "OM_VAR",
-							})
+							}, nil)
 							Expect(err).NotTo(HaveOccurred())
 
 							ExpectDirectorToBeConfiguredCorrectly()
@@ -656,9 +656,9 @@ vmtypes-configuration:
 							Expect(err).ToNot(HaveOccurred())
 							Expect(configFile.Close()).ToNot(HaveOccurred())
 
-							err = command.Execute([]string{
+							err = executeCommand(command, []string{
 								"--config", configFile.Name(),
-							})
+							}, nil)
 							Expect(err).NotTo(HaveOccurred())
 
 							ExpectDirectorToBeConfiguredCorrectly()
@@ -678,9 +678,9 @@ vmtypes-configuration:
 					Expect(err).ToNot(HaveOccurred())
 					Expect(configFile.Close()).ToNot(HaveOccurred())
 
-					err = command.Execute([]string{
+					err = executeCommand(command, []string{
 						"--config", configFile.Name(),
-					})
+					}, nil)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring(`the config file contains unrecognized keys: "unrecognized-key", "unrecognized-other-key"`))
 				})
@@ -699,9 +699,9 @@ vmtypes-configuration:
 				Expect(err).ToNot(HaveOccurred())
 				Expect(configFile.Close()).ToNot(HaveOccurred())
 
-				err = command.Execute([]string{
+				err = executeCommand(command, []string{
 					"--config", configFile.Name(),
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(service.ListStagedVMExtensionsCallCount()).To(Equal(0))
 				Expect(service.CreateStagedVMExtensionCallCount()).To(Equal(0))
@@ -717,9 +717,9 @@ vmtypes-configuration:
 				Expect(err).ToNot(HaveOccurred())
 				Expect(configFile.Close()).ToNot(HaveOccurred())
 
-				err = command.Execute([]string{
+				err = executeCommand(command, []string{
 					"--config", configFile.Name(),
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(service.ListStagedVMExtensionsCallCount()).To(Equal(1))
 				Expect(service.DeleteVMExtensionCallCount()).To(Equal(2))
@@ -732,9 +732,9 @@ vmtypes-configuration:
 			})
 
 			It("only updates the config for the provided flags, and sets others to empty", func() {
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--config", configFile.Name(),
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(service.UpdateStagedDirectorAvailabilityZonesCallCount()).To(Equal(0))
 				Expect(service.UpdateStagedDirectorNetworksCallCount()).To(Equal(1))
@@ -763,9 +763,9 @@ vmtypes-configuration:
 				}, nil)
 			})
 			It("returns an error", func() {
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--config", configFile.Name(),
-				})
+				}, nil)
 				Expect(err).To(MatchError("OpsManager does not allow configuration or staging changes while apply changes are running to prevent data loss for configuration and/or staging changes"))
 				Expect(service.ListInstallationsCallCount()).To(Equal(1))
 			})
@@ -774,16 +774,16 @@ vmtypes-configuration:
 		When("an error occurs", func() {
 			When("no director configuration flags are provided", func() {
 				It("returns an error ", func() {
-					err := command.Execute([]string{})
+					err := executeCommand(command, []string{}, nil)
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("missing required flag \"--config\""))
+					Expect(err.Error()).To(ContainSubstring("the required flag `-c, --config' was not specified"))
 				})
 			})
 
 			When("flag parser fails", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{"--foo", "bar"})
-					Expect(err).To(MatchError("could not parse configure-director flags: flag provided but not defined: -foo"))
+					err := executeCommand(command, []string{"--foo", "bar"}, nil)
+					Expect(err).To(MatchError("unknown flag `foo'"))
 				})
 			})
 
@@ -794,7 +794,7 @@ vmtypes-configuration:
 
 				It("returns an error", func() {
 					service.UpdateStagedDirectorAvailabilityZonesReturns(errors.New("az endpoint failed"))
-					err := command.Execute([]string{"--config", configFile.Name()})
+					err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 					Expect(err).To(MatchError("availability zones configuration could not be applied: az endpoint failed"))
 				})
 			})
@@ -806,7 +806,7 @@ vmtypes-configuration:
 
 				It("returns an error", func() {
 					service.UpdateStagedDirectorNetworksReturns(errors.New("networks endpoint failed"))
-					err := command.Execute([]string{"--config", configFile.Name()})
+					err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 					Expect(err).To(MatchError("networks configuration could not be applied: networks endpoint failed"))
 				})
 			})
@@ -818,7 +818,7 @@ vmtypes-configuration:
 
 				It("returns an error", func() {
 					service.UpdateStagedDirectorNetworkAndAZReturns(errors.New("director service failed"))
-					err := command.Execute([]string{"--config", configFile.Name()})
+					err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 					Expect(err).To(MatchError("network and AZs could not be applied: director service failed"))
 				})
 			})
@@ -830,7 +830,7 @@ vmtypes-configuration:
 
 				It("returns an error", func() {
 					service.UpdateStagedDirectorPropertiesReturns(errors.New("properties end point failed"))
-					err := command.Execute([]string{"--config", configFile.Name()})
+					err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 					Expect(err).To(MatchError("properties could not be applied: properties end point failed"))
 				})
 			})
@@ -842,7 +842,7 @@ vmtypes-configuration:
 
 				It("returns an error", func() {
 					service.GetStagedProductByNameReturns(api.StagedProductsFindOutput{}, errors.New("some-error"))
-					err := command.Execute([]string{"--config", configFile.Name()})
+					err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 					Expect(err).To(MatchError(ContainSubstring("some-error")))
 				})
 			})
@@ -853,7 +853,7 @@ vmtypes-configuration:
 				})
 
 				It("returns an error", func() {
-					err := command.Execute([]string{"--config", configFile.Name()})
+					err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 					Expect(err).To(MatchError(ContainSubstring("did not find expected ',' or '}'")))
 				})
 			})
@@ -865,7 +865,7 @@ vmtypes-configuration:
 
 				It("returns an error", func() {
 					service.ListStagedProductJobsReturns(nil, errors.New("some-error"))
-					err := command.Execute([]string{"--config", configFile.Name()})
+					err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 					Expect(err).To(MatchError(ContainSubstring("some-error")))
 				})
 			})
@@ -876,7 +876,7 @@ vmtypes-configuration:
 				})
 
 				It("returns an error", func() {
-					err := command.Execute([]string{"--config", configFile.Name()})
+					err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 					Expect(err).To(MatchError(ContainSubstring("invalid-resource")))
 				})
 			})
@@ -888,7 +888,7 @@ vmtypes-configuration:
 
 				It("returns an error", func() {
 					service.GetStagedProductJobResourceConfigReturns(api.JobProperties{}, errors.New("some-error"))
-					err := command.Execute([]string{"--config", configFile.Name()})
+					err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 					Expect(err).To(MatchError(ContainSubstring("some-error")))
 				})
 			})
@@ -899,7 +899,7 @@ vmtypes-configuration:
 				})
 
 				It("returns an error", func() {
-					err := command.Execute([]string{"--config", configFile.Name()})
+					err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 					Expect(err).To(MatchError(ContainSubstring("could not decode resource-configuration json for job 'resource'")))
 				})
 			})
@@ -911,7 +911,7 @@ vmtypes-configuration:
 
 				It("returns an error", func() {
 					service.UpdateStagedProductJobResourceConfigReturns(errors.New("some-error"))
-					err := command.Execute([]string{"--config", configFile.Name()})
+					err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 					Expect(err).To(MatchError(ContainSubstring("some-error")))
 				})
 			})
@@ -929,9 +929,9 @@ iaas-configurations:
 			})
 
 			It("configures the director", func() {
-				err := command.Execute([]string{
+				err := executeCommand(command, []string{
 					"--config", configFile.Name(),
-				})
+				}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(service.UpdateStagedDirectorIAASConfigurationsCallCount()).To(Equal(1))
@@ -942,7 +942,7 @@ iaas-configurations:
 				When("setting iaas configurations fails", func() {
 					It("returns an error", func() {
 						service.UpdateStagedDirectorIAASConfigurationsReturns(errors.New("iaas failed"))
-						err := command.Execute([]string{"--config", configFile.Name()})
+						err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 						Expect(err).To(MatchError("iaas configurations could not be completed: iaas failed"))
 					})
 				})
@@ -953,7 +953,7 @@ iaas-configurations:
 						for _, version := range versions {
 							service.InfoReturns(api.Info{Version: version}, nil)
 
-							err := command.Execute([]string{"--config", configFile.Name()})
+							err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 							Expect(err).To(MatchError(fmt.Sprintf("\"iaas-configurations\" is only available with Ops Manager 2.2 or later: you are running %s", version)))
 						}
 					})
@@ -966,20 +966,10 @@ iaas-configurations:
 				})
 
 				It("returns an error", func() {
-					err := command.Execute([]string{"--config", configFile.Name()})
+					err := executeCommand(command, []string{"--config", configFile.Name()}, nil)
 					Expect(err).To(MatchError("iaas-configurations cannot be used with properties-configuration.iaas-configurations\nPlease only use one implementation."))
 				})
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns the usage", func() {
-			usage := command.Usage()
-
-			Expect(usage.Description).To(Equal("This authenticated command configures the director."))
-			Expect(usage.ShortDescription).To(Equal("configures the director"))
-			Expect(usage.Flags).To(Equal(command.Options))
 		})
 	})
 })

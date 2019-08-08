@@ -3,7 +3,6 @@ package commands_test
 import (
 	"fmt"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -15,7 +14,7 @@ import (
 
 var _ = Describe("SslCertificate", func() {
 	var (
-		sslCertificate            commands.SSLCertificate
+		sslCertificate            *commands.SSLCertificate
 		fakeSSLCertificateService *fakes.SSLCertificateService
 		fakePresenter             *presenterfakes.FormattedPresenter
 	)
@@ -41,7 +40,7 @@ var _ = Describe("SslCertificate", func() {
 		})
 
 		It("prints the certificate to a table", func() {
-			err := sslCertificate.Execute([]string{})
+			err := executeCommand(sslCertificate, []string{}, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(fakeSSLCertificateService.GetSSLCertificateCallCount()).To(Equal(1))
@@ -52,9 +51,9 @@ var _ = Describe("SslCertificate", func() {
 
 		Context("when the format flag is provided", func() {
 			It("calls the presenter to set the json format", func() {
-				err := sslCertificate.Execute([]string{
+				err := executeCommand(sslCertificate, []string{
 					"--format", "json",
-				})
+				}, nil)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakePresenter.SetFormatCallCount()).To(Equal(1))
@@ -64,9 +63,9 @@ var _ = Describe("SslCertificate", func() {
 
 		Context("when the flag cannot parsed", func() {
 			It("returns an error", func() {
-				err := sslCertificate.Execute([]string{"--bogus", "nothing"})
+				err := executeCommand(sslCertificate, []string{"--bogus", "nothing"}, nil)
 				Expect(err).To(MatchError(
-					"could not parse ssl-certificate flags: flag provided but not defined: -bogus",
+					"unknown flag `bogus'",
 				))
 			})
 		})
@@ -78,21 +77,9 @@ var _ = Describe("SslCertificate", func() {
 					fmt.Errorf("could not get custom certificate"),
 				)
 
-				err := sslCertificate.Execute([]string{})
+				err := executeCommand(sslCertificate, []string{}, nil)
 				Expect(err).To(MatchError("could not get custom certificate"))
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage", func() {
-			usage := sslCertificate.Usage()
-
-			Expect(usage).To(Equal(jhanda.Usage{
-				Description:      "This authenticated command gets certificate applied to Ops Manager",
-				ShortDescription: "gets certificate applied to Ops Manager",
-				Flags:            usage.Flags,
-			}))
 		})
 	})
 })

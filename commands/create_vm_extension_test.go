@@ -9,7 +9,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
@@ -34,7 +33,7 @@ var _ = Describe("CreateVMExtension", func() {
 	var (
 		fakeService *fakes.CreateVMExtensionService
 		fakeLogger  *fakes.Logger
-		command     commands.CreateVMExtension
+		command     *commands.CreateVMExtension
 		configFile  *os.File
 		err         error
 		varsFile    *os.File
@@ -57,10 +56,10 @@ var _ = Describe("CreateVMExtension", func() {
 
 	Describe("Execute", func() {
 		It("makes a request to the OpsMan to create a VM extension", func() {
-			err := command.Execute([]string{
+			err := executeCommand(command, []string{
 				"--name", "some-vm-extension",
 				"--cloud-properties", "{ \"iam_instance_profile\": \"some-iam-profile\", \"elbs\": [\"some-elb\"] }",
-			})
+			}, nil)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(fakeService.CreateStagedVMExtensionArgsForCall(0)).To(Equal(api.CreateVMExtension{
@@ -88,10 +87,10 @@ var _ = Describe("CreateVMExtension", func() {
 					_, err = varsFile.WriteString(`vm_extension_name: some-vm-extension`)
 					Expect(err).NotTo(HaveOccurred())
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--config", configFile.Name(),
 						"--vars-file", varsFile.Name(),
-					})
+					}, nil)
 
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakeService.CreateStagedVMExtensionArgsForCall(0)).To(Equal(api.CreateVMExtension{
@@ -117,10 +116,10 @@ var _ = Describe("CreateVMExtension", func() {
 					_, err = configFile.WriteString(ymlVMExtensionFile)
 					Expect(err).NotTo(HaveOccurred())
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--config", configFile.Name(),
 						"--var", "vm_extension_name=some-vm-extension",
-					})
+					}, nil)
 
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakeService.CreateStagedVMExtensionArgsForCall(0)).To(Equal(api.CreateVMExtension{
@@ -147,10 +146,10 @@ var _ = Describe("CreateVMExtension", func() {
 					_, err = configFile.WriteString(ymlVMExtensionFile)
 					Expect(err).NotTo(HaveOccurred())
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--config", configFile.Name(),
 						"--vars-env", "OM_VAR",
-					})
+					}, nil)
 
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakeService.CreateStagedVMExtensionArgsForCall(0)).To(Equal(api.CreateVMExtension{
@@ -172,10 +171,10 @@ var _ = Describe("CreateVMExtension", func() {
 				It("returns an error", func() {
 					fakeService.CreateStagedVMExtensionReturns(errors.New("failed to create VM extension"))
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--name", "some-vm-extension",
 						"--cloud-properties", "{ \"iam_instance_profile\": \"some-iam-profile\", \"elbs\": [\"some-elb\"] }",
-					})
+					}, nil)
 
 					Expect(err).To(MatchError("failed to create VM extension"))
 				})
@@ -183,14 +182,14 @@ var _ = Describe("CreateVMExtension", func() {
 
 			Context("when an unknown flag is provided", func() {
 				It("returns an error", func() {
-					err := command.Execute([]string{"--badflag"})
-					Expect(err).To(MatchError("could not parse create-vm-extension flags: flag provided but not defined: -badflag"))
+					err := executeCommand(command, []string{"--badflag"}, nil)
+					Expect(err).To(MatchError("unknown flag `badflag'"))
 				})
 			})
 
 			Context("error when name is not provided", func() {
 				It("returns an error when flag is missing", func() {
-					err := command.Execute([]string{"--cloud-properties", "{ \"iam_instance_profile\": \"some-iam-profile\", \"elbs\": [\"some-elb\"] }"})
+					err := executeCommand(command, []string{"--cloud-properties", "{ \"iam_instance_profile\": \"some-iam-profile\", \"elbs\": [\"some-elb\"] }"}, nil)
 					Expect(err).To(MatchError("VM Extension name must provide name via --name flag"))
 					Expect(fakeService.CreateStagedVMExtensionCallCount()).Should(Equal(0))
 				})
@@ -201,9 +200,9 @@ var _ = Describe("CreateVMExtension", func() {
 					_, err = configFile.WriteString(ymlVMExtensionNoNameFile)
 					Expect(err).NotTo(HaveOccurred())
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--config", configFile.Name(),
-					})
+					}, nil)
 
 					Expect(err).To(MatchError("Config file must contain name element"))
 					Expect(fakeService.CreateStagedVMExtensionCallCount()).Should(Equal(0))
@@ -219,9 +218,9 @@ var _ = Describe("CreateVMExtension", func() {
 					_, err = configFile.WriteString(ymlVMExtensionFile)
 					Expect(err).NotTo(HaveOccurred())
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--config", configFile.Name(),
-					})
+					}, nil)
 
 					Expect(err.Error()).Should(ContainSubstring("Expected to find variables"))
 
@@ -236,26 +235,15 @@ var _ = Describe("CreateVMExtension", func() {
 					_, err = configFile.WriteString("asdfasdf")
 					Expect(err).NotTo(HaveOccurred())
 
-					err := command.Execute([]string{
+					err := executeCommand(command, []string{
 						"--config", configFile.Name(),
-					})
+					}, nil)
 
 					Expect(err.Error()).Should(ContainSubstring("could not be parsed as valid configuration: yaml"))
 
 				})
 			})
 
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewCreateVMExtension(nil, nil, nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This creates/updates a VM extension",
-				ShortDescription: "creates/updates a VM extension",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

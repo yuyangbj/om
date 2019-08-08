@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/commands/fakes"
 
@@ -26,9 +25,9 @@ var _ = Describe("ExportInstallation", func() {
 	It("exports the installation", func() {
 		command := commands.NewExportInstallation(fakeService, logger)
 
-		err := command.Execute([]string{
+		err := executeCommand(command, []string{
 			"--output-file", "/path/to/output.zip",
-		})
+		}, nil)
 		Expect(err).NotTo(HaveOccurred())
 
 		By("calling export on the installation service")
@@ -49,16 +48,16 @@ var _ = Describe("ExportInstallation", func() {
 		Context("when an unknown flag is provided", func() {
 			It("returns an error", func() {
 				command := commands.NewExportInstallation(fakeService, logger)
-				err := command.Execute([]string{"--badflag"})
-				Expect(err).To(MatchError("could not parse export-installation flags: flag provided but not defined: -badflag"))
+				err := executeCommand(command, []string{"--badflag"}, nil)
+				Expect(err).To(MatchError("unknown flag `badflag'"))
 			})
 		})
 
 		Context("when output file is not provided", func() {
 			It("returns an error and prints out usage", func() {
 				command := commands.NewExportInstallation(fakeService, logger)
-				err := command.Execute([]string{})
-				Expect(err).To(MatchError("could not parse export-installation flags: missing required flag \"--output-file\""))
+				err := executeCommand(command, []string{}, nil)
+				Expect(err.Error()).To(MatchRegexp("the required flag.*--output-file"))
 			})
 		})
 
@@ -67,20 +66,9 @@ var _ = Describe("ExportInstallation", func() {
 				command := commands.NewExportInstallation(fakeService, logger)
 				fakeService.DownloadInstallationAssetCollectionReturns(errors.New("some error"))
 
-				err := command.Execute([]string{"--output-file", "/some/path"})
+				err := executeCommand(command, []string{"--output-file", "/some/path"}, nil)
 				Expect(err).To(MatchError("failed to export installation: some error"))
 			})
-		})
-	})
-
-	Describe("Usage", func() {
-		It("returns usage information for the command", func() {
-			command := commands.NewExportInstallation(nil, nil)
-			Expect(command.Usage()).To(Equal(jhanda.Usage{
-				Description:      "This command will export the current installation of the target Ops Manager.",
-				ShortDescription: "exports the installation of the target Ops Manager",
-				Flags:            command.Options,
-			}))
 		})
 	})
 })

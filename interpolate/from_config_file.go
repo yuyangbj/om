@@ -97,7 +97,7 @@ func FromConfigFile(config interface{}, args []string) (bool, error) {
 
 	}
 	fileArgs = append(fileArgs, args...)
-	fmt.Printf("args: %#v\n", fileArgs)
+	fmt.Printf("args: %#v\n\n", fileArgs)
 	_, err = flags.ParseArgs(config, fileArgs)
 	return true, err
 }

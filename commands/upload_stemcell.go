@@ -51,6 +51,7 @@ func NewUploadStemcell(multipart multipart, service uploadStemcellService, logge
 }
 
 func (us UploadStemcell) Execute(args []string) error {
+	fmt.Printf("ARGS: %#v\n", args)
 	err := us.validate()
 	if err != nil {
 		return err
@@ -132,6 +133,7 @@ func (us UploadStemcell) validate() error {
 		return errors.New("--floating must be \"true\" or \"false\". Default: true")
 	}
 
+	fmt.Printf("OPTIONS: %#v\n", us.Options)
 	if us.Options.Shasum != "" {
 		shaValidator := validator.NewSHA256Calculator()
 		shasum, err := shaValidator.Checksum(us.Options.Stemcell)

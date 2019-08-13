@@ -173,7 +173,7 @@ name: some-product`)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			It("returns an error", func() {
+			FIt("returns an error", func() {
 				command := exec.Command(pathToMain,
 					"--target", server.URL,
 					"--username", "some-username",

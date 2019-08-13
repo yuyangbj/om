@@ -84,7 +84,7 @@ product_version: 1.2.3
 			Context("when the flags cannot be parsed", func() {
 				It("returns an error", func() {
 					err = executeCommand(command, []string{"--bad-flag", "some-value"})
-					Expect(err).To(MatchError(MatchRegexp("could not parse tile-metadata flags")))
+					Expect(err).To(MatchError(MatchRegexp("unknown flag `bad-flag'")))
 				})
 			})
 

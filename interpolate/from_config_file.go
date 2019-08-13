@@ -14,23 +14,26 @@ import (
 // To load vars, VarsFile and/or VarsEnv must exist in the command struct being passed in.
 // If VarsEnv is used, envFunc must be defined instead of nil
 func FromConfigFile(config interface{}, args []string) (bool, error) {
+	parser := flags.NewParser(config, flags.PassDoubleDash)
+	_, err := parser.ParseArgs(args)
+
 	commandValue := reflect.ValueOf(config).Elem()
 	configFileField := commandValue.FieldByName("ConfigFile")
 	if !configFileField.IsValid() {
 		commandValue = commandValue.FieldByName("Options")
 		if !commandValue.IsValid() {
-			return false, nil
+			return false, err
 		}
 
 		configFileField = commandValue.FieldByName("ConfigFile")
 		if !configFileField.IsValid() {
-			return false, nil
+			return false, err
 		}
 	}
 
 	configFile := configFileField.String()
 	if configFile == "" {
-		return false, nil
+		return false, err
 	}
 
 	varsFileField := commandValue.FieldByName("VarsFile")
@@ -64,7 +67,7 @@ func FromConfigFile(config interface{}, args []string) (bool, error) {
 		}
 	}
 
-	contents, err := Execute(Options{
+	contents, err = Execute(Options{
 		TemplateFile:  configFile,
 		VarsEnvs:      varsEnv,
 		VarsFiles:     varsField,
@@ -97,7 +100,6 @@ func FromConfigFile(config interface{}, args []string) (bool, error) {
 
 	}
 	fileArgs = append(fileArgs, args...)
-	fmt.Printf("args: %#v\n\n", fileArgs)
-	_, err = flags.ParseArgs(config, fileArgs)
+	_, err = parser.ParseArgs(fileArgs)
 	return true, err
 }

@@ -12,7 +12,7 @@ type Interpolate struct {
 	environFunc func() []string
 	logger      logger
 	Options     struct {
-		ConfigFile        string   `long:"config"       short:"c" description:"path for file to be interpolated"`
+		Config            string   `long:"config"       short:"c" description:"path for file to be interpolated"`
 		Path              string   `long:"path"                   description:"Extract specified value out of the interpolated file (e.g.: /private_key). The rest of the file will not be printed."`
 		VarsEnv           []string `long:"vars-env"               description:"Load variables from environment variables (e.g.: 'MY' to load MY_var=value)"`
 		VarsFile          []string `long:"vars-file"    short:"l" description:"Load variables from a YAML file"`
@@ -56,9 +56,9 @@ func (c Interpolate) Execute(args []string) error {
 			return fmt.Errorf("error writing temp file for STDIN: %s", err)
 		}
 
-		c.Options.ConfigFile = tempFile.Name()
+		c.Options.Config = tempFile.Name()
 
-	} else if len(c.Options.ConfigFile) == 0 {
+	} else if len(c.Options.Config) == 0 {
 		return fmt.Errorf("no file or STDIN input provided. Please provide a valid --config file or use a pipe to get STDIN")
 	}
 
@@ -68,7 +68,7 @@ func (c Interpolate) Execute(args []string) error {
 	}
 
 	bytes, err := interpolate.Execute(interpolate.Options{
-		TemplateFile:  c.Options.ConfigFile,
+		TemplateFile:  c.Options.Config,
 		VarsFiles:     c.Options.VarsFile,
 		Vars:          c.Options.Vars,
 		EnvironFunc:   c.environFunc,

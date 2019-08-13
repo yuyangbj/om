@@ -18,7 +18,7 @@ type ConfigureDirector struct {
 	logger      logger
 	Options     struct {
 		IgnoreVerifierWarnings bool     `long:"ignore-verifier-warnings" description:"option to ignore verifier warnings. NOT RECOMMENDED UNLESS DISABLED IN OPS MANAGER"`
-		ConfigFile             string   `short:"c" long:"config" description:"path to yml file containing all config fields (see docs/configure-director/README.md for format)" required:"true"`
+		Config                 string   `short:"c" long:"config" description:"path to yml file containing all config fields (see docs/configure-director/README.md for format)" required:"true"`
 		VarsFile               []string `long:"vars-file" description:"Load variables from a YAML file"`
 		VarsEnv                []string `long:"vars-env" description:"Load variables from environment variables (e.g.: 'MY' to load MY_var=value)"`
 		Vars                   []string `long:"var" short:"v" description:"Load variable from the command line. Format: VAR=VAL"`
@@ -139,7 +139,7 @@ func (c ConfigureDirector) interpolateConfig() (*directorConfig, error) {
 	}
 
 	configContents, err := interpolate.Execute(interpolate.Options{
-		TemplateFile:  c.Options.ConfigFile,
+		TemplateFile:  c.Options.Config,
 		VarsFiles:     c.Options.VarsFile,
 		EnvironFunc:   c.environFunc,
 		Vars:          c.Options.Vars,
@@ -154,7 +154,7 @@ func (c ConfigureDirector) interpolateConfig() (*directorConfig, error) {
 	var config directorConfig
 	err = yaml.UnmarshalStrict(configContents, &config)
 	if err != nil {
-		return nil, fmt.Errorf("could not be parsed as valid configuration: %s: %s", c.Options.ConfigFile, err)
+		return nil, fmt.Errorf("could not be parsed as valid configuration: %s: %s", c.Options.Config, err)
 	}
 	return &config, nil
 }

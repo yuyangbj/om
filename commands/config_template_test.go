@@ -149,7 +149,7 @@ var _ = Describe("ConfigTemplate", func() {
 					}
 				}
 				err := executeCommand(command, args)
-				Expect(err).To(MatchError(fmt.Sprintf("missing required flag \"%s\"", required)))
+				Expect(err).To(MatchError(fmt.Sprintf("the required flag `%s' was not specified", required)))
 			},
 				Entry("with output-directory", "--output-directory"),
 				Entry("with pivnet-api-token", "--pivnet-api-token"),

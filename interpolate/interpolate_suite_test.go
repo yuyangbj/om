@@ -185,16 +185,29 @@ var _ = Describe("Execute", func() {
 })
 
 var _ = Describe("FromConfigFile", func() {
-	It("does nothing if the struct does not have the ConfigFile field", func() {
-		config := struct{}{}
-		hasConfig, err := interpolate.FromConfigFile(&config, nil)
-		Expect(hasConfig).To(BeFalse())
-		Expect(err).NotTo(HaveOccurred())
+	When("the struct does not have ConfigFile field", func() {
+		It("parses the args", func() {
+			c := struct{
+				Name string `long:"name"`
+			}{}
+			hasConfig, err := interpolate.FromConfigFile(&c, []string{"--name", "Bob"})
+			Expect(hasConfig).To(BeFalse())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Name).To(Equal("Bob"))
+		})
+
+		It("returns the error on invalid arguments", func() {
+			c := struct{}{}
+			hasConfig, err := interpolate.FromConfigFile(&c, []string{"--name", "Bob"})
+			Expect(hasConfig).To(BeFalse())
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError("unknown flag `name'"))
+		})
 	})
 
 	When("ConfgileFile is defined on Options", func() {
 		type options struct {
-			ConfigFile string
+			ConfigFile string `long:"config"`
 			VarsFile   []string
 			VarsEnv    []string
 			Vars       []string
@@ -270,6 +283,15 @@ var _ = Describe("FromConfigFile", func() {
 			Expect(c.Options.Name).To(Equal("Bob"))
 		})
 
+		It("uses the config file provided by arguments", func() {
+			configFile := writeFile(``)
+			c := config{}
+			hasConfig, err := interpolate.FromConfigFile(&c, []string{"--name", "Bob", "--config", configFile})
+			Expect(hasConfig).To(BeTrue())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Options.Name).To(Equal("Bob"))
+		})
+
 		It("does nothing if the config file is not defined", func() {
 			c := config{}
 			hasConfig, err := interpolate.FromConfigFile(&c, []string{})
@@ -281,7 +303,7 @@ var _ = Describe("FromConfigFile", func() {
 
 	When("ConfigFile is a defined field", func() {
 		type config struct {
-			ConfigFile string
+			ConfigFile string `long:"config"`
 			VarsFile   []string
 			VarsEnv    []string
 			Vars       []string
@@ -339,6 +361,15 @@ var _ = Describe("FromConfigFile", func() {
 				ConfigFile: writeFile(``),
 			}
 			hasConfig, err := interpolate.FromConfigFile(&c, []string{"--name", "Bob"})
+			Expect(hasConfig).To(BeTrue())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Name).To(Equal("Bob"))
+		})
+
+		It("uses the config file provided by arguments", func() {
+			configFile := writeFile(``)
+			c := config{}
+			hasConfig, err := interpolate.FromConfigFile(&c, []string{"--name", "Bob", "--config", configFile})
 			Expect(hasConfig).To(BeTrue())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c.Name).To(Equal("Bob"))

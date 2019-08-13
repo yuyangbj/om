@@ -14,16 +14,9 @@ func TestCommands(t *testing.T) {
 }
 
 func executeCommand(command interface{}, args []string) error {
-	if ok, err := interpolate.FromConfigFile(command, args); ok {
-		if err != nil {
-			return err
-		}
-	} else {
-		parser := flags.NewParser(command, flags.HelpFlag|flags.PassDoubleDash)
-		_, err := parser.ParseArgs(args)
-		if err != nil {
-			return err
-		}
+	_, err := interpolate.FromConfigFile(command, args)
+	if err != nil {
+		return err
 	}
 
 	return command.(flags.Commander).Execute([]string{})

@@ -11,7 +11,7 @@ import (
 
 var _ = Describe("global flags", func() {
 	Context("when provided an unknown global flag", func() {
-		FIt("prints the usage", func() {
+		It("prints the usage", func() {
 			cmd := exec.Command(pathToMain, "-?")
 
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)

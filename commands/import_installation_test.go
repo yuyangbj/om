@@ -300,7 +300,7 @@ var _ = Describe("ImportInstallation", func() {
 		Context("when the global decryption-passphrase is not provided", func() {
 			It("returns an error", func() {
 				command := commands.NewImportInstallation(multipart, fakeService, "", logger)
-				err := executeCommand(command, []string{"--polling-interval", "0"})
+				err := executeCommand(command, []string{"--polling-interval", "0", "-i", "some-file.zip"})
 				Expect(err).To(MatchError("the global decryption-passphrase argument is required for this command"))
 			})
 		})

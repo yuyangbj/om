@@ -14,6 +14,17 @@ type Api struct {
 	logger                 logger
 }
 
+func (a *Api) UpdateClients(input ApiInput) {
+	api := &Api{
+		client:                 input.Client,
+		unauthedClient:         input.UnauthedClient,
+		progressClient:         input.ProgressClient,
+		unauthedProgressClient: input.UnauthedProgressClient,
+		logger:                 input.Logger,
+	}
+	*a = *api
+}
+
 type ApiInput struct {
 	Client                 httpClient
 	UnauthedClient         httpClient

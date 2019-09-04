@@ -2,51 +2,44 @@ package commands
 
 import (
 	"fmt"
-
-	"github.com/pivotal-cf/jhanda"
+	"github.com/spf13/cobra"
 )
-
-type ExportInstallation struct {
-	logger  logger
-	service exportInstallationService
-	Options struct {
-		OutputFile string `long:"output-file"      short:"o"  required:"true" description:"output path to write installation to"`
-	}
-}
 
 //counterfeiter:generate -o ./fakes/export_installation_service.go --fake-name ExportInstallationService . exportInstallationService
 type exportInstallationService interface {
 	DownloadInstallationAssetCollection(outputFile string) error
 }
 
-func NewExportInstallation(service exportInstallationService, logger logger) ExportInstallation {
-	return ExportInstallation{
-		logger:  logger,
-		service: service,
+func NewExportInstallation(service exportInstallationService, logger logger) *cobra.Command {
+	var outputFile string
+	//var omAPI exportInstallationService
+	//var err error
+
+	command := &cobra.Command{
+		Use:     "export-installation",
+		Short:   "exports the installation of the target Ops Manager",
+		Long:    "This command will export the current installation of the target Ops Manager.",
+		Example: "om version",
+		//PreRunE: func(cmd *cobra.Command, args []string) error {
+		//	omAPI, err = createAPI(cmd)
+		//	return err
+		//},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			logger.Printf("exporting installation")
+
+			err := service.DownloadInstallationAssetCollection(outputFile)
+			if err != nil {
+				return fmt.Errorf("failed to export installation: %s", err)
+			}
+
+			logger.Printf("finished exporting installation")
+
+			return nil
+		},
 	}
-}
 
-func (ei ExportInstallation) Usage() jhanda.Usage {
-	return jhanda.Usage{
-		Description:      "This command will export the current installation of the target Ops Manager.",
-		ShortDescription: "exports the installation of the target Ops Manager",
-		Flags:            ei.Options,
-	}
-}
+	command.Flags().StringVarP(&outputFile, "output-file", "o", "", "output path to write installation to")
+	_ = command.MarkFlagRequired("output-file")
 
-func (ei ExportInstallation) Execute(args []string) error {
-	if _, err := jhanda.Parse(&ei.Options, args); err != nil {
-		return fmt.Errorf("could not parse export-installation flags: %s", err)
-	}
-
-	ei.logger.Printf("exporting installation")
-
-	err := ei.service.DownloadInstallationAssetCollection(ei.Options.OutputFile)
-	if err != nil {
-		return fmt.Errorf("failed to export installation: %s", err)
-	}
-
-	ei.logger.Printf("finished exporting installation")
-
-	return nil
+	return command
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/spf13/cobra"
 	"log"
 	"net/http"
 	"os"
@@ -12,18 +13,12 @@ import (
 
 	"time"
 
-	"github.com/olekukonko/tablewriter"
-	"github.com/pivotal-cf/om/renderers"
 	"github.com/pivotal/uilive"
 	"gopkg.in/yaml.v2"
 
-	"github.com/pivotal-cf/jhanda"
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
-	"github.com/pivotal-cf/om/extractor"
-	"github.com/pivotal-cf/om/formcontent"
 	"github.com/pivotal-cf/om/network"
-	"github.com/pivotal-cf/om/presenters"
 	"github.com/pivotal-cf/om/progress"
 
 	_ "github.com/pivotal-cf/om/download_clients"
@@ -55,161 +50,199 @@ type options struct {
 	Version              bool   `                             short:"v"  long:"version"                                          default:"false" description:"prints the om release version"`
 }
 
-func main() {
-	applySleepDuration, _ := time.ParseDuration(applySleepDurationString)
+var rootCmd = &cobra.Command{
+	Use:  "om [options] <command> [<args>]",
+	Long: "om helps you interact with an Ops Manager",
+}
 
-	stdout := log.New(os.Stdout, "", 0)
+var global options
+
+func isNotRootCommand() bool {
+	commands := []string{"help", "version", "export-installation"}
+	for _, command := range commands {
+		if command == os.Args[1] {
+			return false
+		}
+	}
+	return true
+}
+
+func addRootCmdFlags() {
+	rootCmd.PersistentFlags().StringVar(&global.CACert, "ca-cert", "", "OpsManager CA certificate path or value")
+	rootCmd.PersistentFlags().StringVar(&global.ClientID, "client-id", "", "Client ID for the Ops Manager VM (not required for unauthenticated commands)")
+	rootCmd.PersistentFlags().StringVar(&global.ClientSecret, "client-secret", "", "Client Secret for the Ops Manager VM (not required for unauthenticated commands)")
+	rootCmd.PersistentFlags().IntVar(&global.ConnectTimeout, "connect-timeout", 10, "timeout in seconds to make TCP connections")
+	rootCmd.PersistentFlags().StringVar(&global.DecryptionPassphrase, "decryption-passphrase", "", "Passphrase to decrypt the installation if the Ops Manager VM has been rebooted (optional for most commands)")
+	rootCmd.PersistentFlags().IntVar(&global.RequestTimeout, "request-timeout", 1800, "timeout in seconds for HTTP requests to Ops Manager")
+	rootCmd.PersistentFlags().BoolVar(&global.SkipSSLValidation, "skip-ssl-validation", false, "skip ssl certificate validation during http requests")
+	rootCmd.PersistentFlags().StringVar(&global.Target, "target", "", "location of the Ops Manager VM")
+	rootCmd.PersistentFlags().BoolVar(&global.Trace, "trace", false, "prints HTTP requests and response payloads")
+	rootCmd.PersistentFlags().StringVar(&global.Username, "username", "", "admin username for the Ops Manager VM (not required for unauthenticated commands)")
+	rootCmd.PersistentFlags().StringVar(&global.Password, "password", "", "admin password for the Ops Manager VM (not required for unauthenticated commands)")
+}
+
+func main() {
+	//applySleepDuration, _ := time.ParseDuration(applySleepDurationString)
+
+	//stdout := log.New(os.Stdout, "", 0)
 	stderr := log.New(os.Stderr, "", 0)
 
-	var global options
+	//var args []string
+	var err error
+	omAPI := &api.Api{}
+	//if isNotRootCommand() {
+	//	args, err = jhanda.Parse(&global, os.Args[1:])
+	//	if err != nil {
+	//		stderr.Fatal(err)
+	//	}
+	//} else {
+	addRootCmdFlags()
+	rootCmd.AddCommand(commands.NewVersion(version, os.Stdout))
+	rootCmd.AddCommand(commands.NewExportInstallation(omAPI, stderr))
 
-	args, err := jhanda.Parse(&global, os.Args[1:])
-	if err != nil {
+	//}
+
+	//err = setEnvFileProperties(&global)
+	//if err != nil {
+	//	stderr.Fatal(err)
+	//}
+	//
+	//globalFlagsUsage, err := jhanda.PrintUsage(global)
+	//if err != nil {
+	//	stderr.Fatal(err)
+	//}
+	//
+	//var command string
+	//if len(args) > 0 {
+	//	command, args = args[0], args[1:]
+	//}
+	//
+	//if global.Version {
+	//	command = "version"
+	//}
+	//
+	//if global.Help {
+	//	command = "help"
+	//}
+	//
+	//if command == "" {
+	//	command = "help"
+	//}
+
+	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+		requestTimeout := time.Duration(global.RequestTimeout) * time.Second
+		connectTimeout := time.Duration(global.ConnectTimeout) * time.Second
+
+		var unauthenticatedClient, authedClient, unauthenticatedProgressClient, authedProgressClient httpClient
+		unauthenticatedClient, _ = network.NewUnauthenticatedClient(global.Target, global.SkipSSLValidation, global.CACert, connectTimeout, requestTimeout)
+		if err != nil {
+			stderr.Fatal(err)
+		}
+
+		authedClient, err = network.NewOAuthClient(global.Target, global.Username, global.Password, global.ClientID, global.ClientSecret, global.SkipSSLValidation, global.CACert, connectTimeout, requestTimeout)
+
+		if err != nil {
+			stderr.Fatal(err)
+		}
+
+		if global.DecryptionPassphrase != "" {
+			authedClient = network.NewDecryptClient(authedClient, unauthenticatedClient, global.DecryptionPassphrase, os.Stderr)
+		}
+
+		liveWriter := uilive.New()
+		liveWriter.Out = os.Stderr
+		unauthenticatedProgressClient = network.NewProgressClient(unauthenticatedClient, progress.NewBar(), liveWriter)
+		authedProgressClient = network.NewProgressClient(authedClient, progress.NewBar(), liveWriter)
+
+		if global.Trace {
+			unauthenticatedClient = network.NewTraceClient(unauthenticatedClient, os.Stderr)
+			unauthenticatedProgressClient = network.NewTraceClient(unauthenticatedProgressClient, os.Stderr)
+			authedClient = network.NewTraceClient(authedClient, os.Stderr)
+			authedProgressClient = network.NewTraceClient(authedProgressClient, os.Stderr)
+		}
+
+		omAPI.UpdateClients(api.ApiInput{
+			Client:                 authedClient,
+			UnauthedClient:         unauthenticatedClient,
+			ProgressClient:         authedProgressClient,
+			UnauthedProgressClient: unauthenticatedProgressClient,
+			Logger:                 stderr,
+		})
+	}
+
+	if err := rootCmd.Execute(); err != nil {
 		stderr.Fatal(err)
 	}
+	os.Exit(0)
 
-	err = setEnvFileProperties(&global)
-	if err != nil {
-		stderr.Fatal(err)
-	}
+	//logWriter := commands.NewLogWriter(os.Stdout)
+	//tableWriter := tablewriter.NewWriter(os.Stdout)
+	//
+	//form := formcontent.NewForm()
+	//
+	//metadataExtractor := extractor.MetadataExtractor{}
+	//
+	//presenter := presenters.NewPresenter(presenters.NewTablePresenter(tableWriter), presenters.NewJSONPresenter(os.Stdout))
+	//envRendererFactory := renderers.NewFactory(renderers.NewEnvGetter())
 
-	globalFlagsUsage, err := jhanda.PrintUsage(global)
-	if err != nil {
-		stderr.Fatal(err)
-	}
-
-	var command string
-	if len(args) > 0 {
-		command, args = args[0], args[1:]
-	}
-
-	if global.Version {
-		command = "version"
-	}
-
-	if global.Help {
-		command = "help"
-	}
-
-	if command == "" {
-		command = "help"
-	}
-
-	requestTimeout := time.Duration(global.RequestTimeout) * time.Second
-	connectTimeout := time.Duration(global.ConnectTimeout) * time.Second
-
-	var unauthenticatedClient, authedClient, authedCookieClient, unauthenticatedProgressClient, authedProgressClient httpClient
-	unauthenticatedClient, _ = network.NewUnauthenticatedClient(global.Target, global.SkipSSLValidation, global.CACert, connectTimeout, requestTimeout)
-	if err != nil {
-		stderr.Fatal(err)
-	}
-
-	authedClient, err = network.NewOAuthClient(global.Target, global.Username, global.Password, global.ClientID, global.ClientSecret, global.SkipSSLValidation, global.CACert, connectTimeout, requestTimeout)
-
-	if err != nil {
-		stderr.Fatal(err)
-	}
-
-	if global.DecryptionPassphrase != "" {
-		authedClient = network.NewDecryptClient(authedClient, unauthenticatedClient, global.DecryptionPassphrase, os.Stderr)
-	}
-
-	authedCookieClient, err = network.NewOAuthClient(global.Target, global.Username, global.Password, global.ClientID, global.ClientSecret, global.SkipSSLValidation, "", connectTimeout, requestTimeout)
-	if err != nil {
-		stderr.Fatal(err)
-	}
-
-	liveWriter := uilive.New()
-	liveWriter.Out = os.Stderr
-	unauthenticatedProgressClient = network.NewProgressClient(unauthenticatedClient, progress.NewBar(), liveWriter)
-	authedProgressClient = network.NewProgressClient(authedClient, progress.NewBar(), liveWriter)
-
-	if global.Trace {
-		unauthenticatedClient = network.NewTraceClient(unauthenticatedClient, os.Stderr)
-		unauthenticatedProgressClient = network.NewTraceClient(unauthenticatedProgressClient, os.Stderr)
-		authedClient = network.NewTraceClient(authedClient, os.Stderr)
-		authedCookieClient = network.NewTraceClient(authedCookieClient, os.Stderr)
-		authedProgressClient = network.NewTraceClient(authedProgressClient, os.Stderr)
-	}
-
-	api := api.New(api.ApiInput{
-		Client:                 authedClient,
-		UnauthedClient:         unauthenticatedClient,
-		ProgressClient:         authedProgressClient,
-		UnauthedProgressClient: unauthenticatedProgressClient,
-		Logger:                 stderr,
-	})
-
-	logWriter := commands.NewLogWriter(os.Stdout)
-	tableWriter := tablewriter.NewWriter(os.Stdout)
-
-	form := formcontent.NewForm()
-
-	metadataExtractor := extractor.MetadataExtractor{}
-
-	presenter := presenters.NewPresenter(presenters.NewTablePresenter(tableWriter), presenters.NewJSONPresenter(os.Stdout))
-	envRendererFactory := renderers.NewFactory(renderers.NewEnvGetter())
-
-	commandSet := jhanda.CommandSet{}
-	commandSet["activate-certificate-authority"] = commands.NewActivateCertificateAuthority(api, stdout)
-	commandSet["apply-changes"] = commands.NewApplyChanges(api, api, logWriter, stdout, applySleepDuration)
-	commandSet["assign-multi-stemcell"] = commands.NewAssignMultiStemcell(api, stdout)
-	commandSet["assign-stemcell"] = commands.NewAssignStemcell(api, stdout)
-	commandSet["available-products"] = commands.NewAvailableProducts(api, presenter, stdout)
-	commandSet["bosh-env"] = commands.NewBoshEnvironment(api, stdout, global.Target, envRendererFactory)
-	commandSet["certificate-authorities"] = commands.NewCertificateAuthorities(api, presenter)
-	commandSet["certificate-authority"] = commands.NewCertificateAuthority(api, presenter, stdout)
-	commandSet["config-template"] = commands.NewConfigTemplate(commands.DefaultProvider())
-	commandSet["configure-authentication"] = commands.NewConfigureAuthentication(api, stdout)
-	commandSet["configure-director"] = commands.NewConfigureDirector(os.Environ, api, stdout)
-	commandSet["configure-ldap-authentication"] = commands.NewConfigureLDAPAuthentication(api, stdout)
-	commandSet["configure-product"] = commands.NewConfigureProduct(os.Environ, api, global.Target, stdout)
-	commandSet["configure-saml-authentication"] = commands.NewConfigureSAMLAuthentication(api, stdout)
-	commandSet["create-certificate-authority"] = commands.NewCreateCertificateAuthority(api, presenter)
-	commandSet["create-vm-extension"] = commands.NewCreateVMExtension(os.Environ, api, stdout)
-	commandSet["credential-references"] = commands.NewCredentialReferences(api, presenter, stdout)
-	commandSet["credentials"] = commands.NewCredentials(api, presenter, stdout)
-	commandSet["curl"] = commands.NewCurl(api, stdout, stderr)
-	commandSet["delete-certificate-authority"] = commands.NewDeleteCertificateAuthority(api, stdout)
-	commandSet["delete-installation"] = commands.NewDeleteInstallation(api, logWriter, stdout, os.Stdin, applySleepDuration)
-	commandSet["delete-product"] = commands.NewDeleteProduct(api)
-	commandSet["delete-ssl-certificate"] = commands.NewDeleteSSLCertificate(api, stdout)
-	commandSet["delete-unused-products"] = commands.NewDeleteUnusedProducts(api, stdout)
-	commandSet["deployed-manifest"] = commands.NewDeployedManifest(api, stdout)
-	commandSet["deployed-products"] = commands.NewDeployedProducts(presenter, api)
-	commandSet["diagnostic-report"] = commands.NewDiagnosticReport(presenter, api)
-	commandSet["download-product"] = commands.NewDownloadProduct(os.Environ, stdout, stderr, os.Stderr)
-	commandSet["errands"] = commands.NewErrands(presenter, api)
-	commandSet["expiring-certificates"] = commands.NewExpiringCertificates(api, stdout)
-	commandSet["export-installation"] = commands.NewExportInstallation(api, stderr)
-	commandSet["generate-certificate"] = commands.NewGenerateCertificate(api, stdout)
-	commandSet["generate-certificate-authority"] = commands.NewGenerateCertificateAuthority(api, presenter)
-	commandSet["help"] = commands.NewHelp(os.Stdout, globalFlagsUsage, commandSet)
-	commandSet["import-installation"] = commands.NewImportInstallation(form, api, global.DecryptionPassphrase, stdout)
-	commandSet["installation-log"] = commands.NewInstallationLog(api, stdout)
-	commandSet["installations"] = commands.NewInstallations(api, presenter)
-	commandSet["interpolate"] = commands.NewInterpolate(os.Environ, stdout)
-	commandSet["pending-changes"] = commands.NewPendingChanges(presenter, api)
-	commandSet["pre-deploy-check"] = commands.NewPreDeployCheck(presenter, api, stdout)
-	commandSet["regenerate-certificates"] = commands.NewRegenerateCertificates(api, stdout)
-	commandSet["ssl-certificate"] = commands.NewSSLCertificate(api, presenter)
-	commandSet["stage-product"] = commands.NewStageProduct(api, stdout)
-	commandSet["staged-config"] = commands.NewStagedConfig(api, stdout)
-	commandSet["staged-director-config"] = commands.NewStagedDirectorConfig(api, stdout)
-	commandSet["staged-manifest"] = commands.NewStagedManifest(api, stdout)
-	commandSet["staged-products"] = commands.NewStagedProducts(presenter, api)
-	commandSet["product-metadata"] = commands.NewProductMetadata(stdout)
-	commandSet["tile-metadata"] = commands.NewDeprecatedProductMetadata(stdout)
-	commandSet["unstage-product"] = commands.NewUnstageProduct(api, stdout)
-	commandSet["update-ssl-certificate"] = commands.NewUpdateSSLCertificate(api, stdout)
-	commandSet["upload-product"] = commands.NewUploadProduct(form, metadataExtractor, api, stdout)
-	commandSet["upload-stemcell"] = commands.NewUploadStemcell(form, api, stdout)
-	commandSet["version"] = commands.NewVersion(version, os.Stdout)
-
-	err = commandSet.Execute(command, args)
-	if err != nil {
-		stderr.Fatal(err)
-	}
+	//commandSet := jhanda.CommandSet{}
+	//commandSet["activate-certificate-authority"] = commands.NewActivateCertificateAuthority(api, stdout)
+	//commandSet["apply-changes"] = commands.NewApplyChanges(api, api, logWriter, stdout, applySleepDuration)
+	//commandSet["assign-multi-stemcell"] = commands.NewAssignMultiStemcell(api, stdout)
+	//commandSet["assign-stemcell"] = commands.NewAssignStemcell(api, stdout)
+	//commandSet["available-products"] = commands.NewAvailableProducts(api, presenter, stdout)
+	//commandSet["bosh-env"] = commands.NewBoshEnvironment(api, stdout, global.Target, envRendererFactory)
+	//commandSet["certificate-authorities"] = commands.NewCertificateAuthorities(api, presenter)
+	//commandSet["certificate-authority"] = commands.NewCertificateAuthority(api, presenter, stdout)
+	//commandSet["config-template"] = commands.NewConfigTemplate(commands.DefaultProvider())
+	//commandSet["configure-authentication"] = commands.NewConfigureAuthentication(api, stdout)
+	//commandSet["configure-director"] = commands.NewConfigureDirector(os.Environ, api, stdout)
+	//commandSet["configure-ldap-authentication"] = commands.NewConfigureLDAPAuthentication(api, stdout)
+	//commandSet["configure-product"] = commands.NewConfigureProduct(os.Environ, api, global.Target, stdout)
+	//commandSet["configure-saml-authentication"] = commands.NewConfigureSAMLAuthentication(api, stdout)
+	//commandSet["create-certificate-authority"] = commands.NewCreateCertificateAuthority(api, presenter)
+	//commandSet["create-vm-extension"] = commands.NewCreateVMExtension(os.Environ, api, stdout)
+	//commandSet["credential-references"] = commands.NewCredentialReferences(api, presenter, stdout)
+	//commandSet["credentials"] = commands.NewCredentials(api, presenter, stdout)
+	//commandSet["curl"] = commands.NewCurl(api, stdout, stderr)
+	//commandSet["delete-certificate-authority"] = commands.NewDeleteCertificateAuthority(api, stdout)
+	//commandSet["delete-installation"] = commands.NewDeleteInstallation(api, logWriter, stdout, os.Stdin, applySleepDuration)
+	//commandSet["delete-product"] = commands.NewDeleteProduct(api)
+	//commandSet["delete-ssl-certificate"] = commands.NewDeleteSSLCertificate(api, stdout)
+	//commandSet["delete-unused-products"] = commands.NewDeleteUnusedProducts(api, stdout)
+	//commandSet["deployed-manifest"] = commands.NewDeployedManifest(api, stdout)
+	//commandSet["deployed-products"] = commands.NewDeployedProducts(presenter, api)
+	//commandSet["diagnostic-report"] = commands.NewDiagnosticReport(presenter, api)
+	//commandSet["download-product"] = commands.NewDownloadProduct(os.Environ, stdout, stderr, os.Stderr)
+	//commandSet["errands"] = commands.NewErrands(presenter, api)
+	//commandSet["expiring-certificates"] = commands.NewExpiringCertificates(api, stdout)
+	//commandSet["generate-certificate"] = commands.NewGenerateCertificate(api, stdout)
+	//commandSet["generate-certificate-authority"] = commands.NewGenerateCertificateAuthority(api, presenter)
+	//commandSet["help"] = commands.NewHelp(os.Stdout, globalFlagsUsage, commandSet)
+	//commandSet["import-installation"] = commands.NewImportInstallation(form, api, global.DecryptionPassphrase, stdout)
+	//commandSet["installation-log"] = commands.NewInstallationLog(api, stdout)
+	//commandSet["installations"] = commands.NewInstallations(api, presenter)
+	//commandSet["interpolate"] = commands.NewInterpolate(os.Environ, stdout)
+	//commandSet["pending-changes"] = commands.NewPendingChanges(presenter, api)
+	//commandSet["pre-deploy-check"] = commands.NewPreDeployCheck(presenter, api, stdout)
+	//commandSet["regenerate-certificates"] = commands.NewRegenerateCertificates(api, stdout)
+	//commandSet["ssl-certificate"] = commands.NewSSLCertificate(api, presenter)
+	//commandSet["stage-product"] = commands.NewStageProduct(api, stdout)
+	//commandSet["staged-config"] = commands.NewStagedConfig(api, stdout)
+	//commandSet["staged-director-config"] = commands.NewStagedDirectorConfig(api, stdout)
+	//commandSet["staged-manifest"] = commands.NewStagedManifest(api, stdout)
+	//commandSet["staged-products"] = commands.NewStagedProducts(presenter, api)
+	//commandSet["product-metadata"] = commands.NewProductMetadata(stdout)
+	//commandSet["tile-metadata"] = commands.NewDeprecatedProductMetadata(stdout)
+	//commandSet["unstage-product"] = commands.NewUnstageProduct(api, stdout)
+	//commandSet["update-ssl-certificate"] = commands.NewUpdateSSLCertificate(api, stdout)
+	//commandSet["upload-product"] = commands.NewUploadProduct(form, metadataExtractor, api, stdout)
+	//commandSet["upload-stemcell"] = commands.NewUploadStemcell(form, api, stdout)
+	//
+	//err = commandSet.Execute(command, args)
+	//if err != nil {
+	//	stderr.Fatal(err)
+	//}
 }
 
 func setEnvFileProperties(global *options) error {

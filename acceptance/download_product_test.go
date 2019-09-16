@@ -3,6 +3,8 @@ package acceptance
 import (
 	"archive/zip"
 	"bytes"
+	"cloud.google.com/go/storage"
+	"context"
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
@@ -10,6 +12,9 @@ import (
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/option"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -378,11 +383,11 @@ var _ = Describe("download-product command", func() {
 			runCommand("gsutil", "rm", "-r", "gs://"+bucketName)
 		})
 
-		FWhen("specifying the stemcell iaas to download", func() {
+		When("specifying the stemcell iaas to download", func() {
 			It("downloads the product and correct stemcell", func() {
 				pivotalFile := createPivotalFile("[pivnet-example-slug,1.10.1]example*pivotal", "./fixtures/example-product.yml")
-				runCommand("gsutil", "cp", pivotalFile, "gs://"+bucketName+"/some/product/[pivnet-example-slug,1.10.1]example-product.pivotal")
-				uploadGCSFile(pivotalFile, serviceAccountKey, "gs://"+bucketName+"/another/stemcell/[stemcells-ubuntu-xenial,97.57]light-bosh-stemcell-97.57-google-kvm-ubuntu-xenial-go_agent.tgz")
+				uploadGCSFile(pivotalFile, serviceAccountKey, bucketName, "some/product/[pivnet-example-slug,1.10.1]example-product.pivotal")
+				uploadGCSFile(pivotalFile, serviceAccountKey, bucketName, "another/stemcell/[stemcells-ubuntu-xenial,97.57]light-bosh-stemcell-97.57-google-kvm-ubuntu-xenial-go_agent.tgz")
 
 				tmpDir, err := ioutil.TempDir("", "")
 				Expect(err).ToNot(HaveOccurred())
@@ -395,6 +400,9 @@ var _ = Describe("download-product command", func() {
 					"--gcs-bucket", bucketName,
 					"--gcs-service-account-json", serviceAccountKey,
 					"--gcs-project-id", projectID,
+					"--stemcell-iaas", "google",
+					"--gcs-stemcell-path", "another/stemcell",
+					"--gcs-product-path", "some/product",
 				)
 
 				session, err := gexec.Start(command, GinkgoWriter, GinkgoWriter)
@@ -422,6 +430,9 @@ var _ = Describe("download-product command", func() {
 					"--gcs-bucket", bucketName,
 					"--gcs-service-account-json", serviceAccountKey,
 					"--gcs-project-id", projectID,
+					"--stemcell-iaas", "google",
+					"--gcs-stemcell-path", "another/stemcell",
+					"--gcs-product-path", "some/product",
 				)
 
 				session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
@@ -445,68 +456,19 @@ var _ = Describe("download-product command", func() {
 					"--pivnet-product-slug", "example-product",
 					"--product-version", "1.10.1",
 					"--output-directory", tmpDir,
-					"--source", "s3",
-					"--s3-bucket", "unknown",
-					"--s3-access-key-id", "minio",
-					"--s3-secret-access-key", "password",
-					"--s3-region-name", "unknown",
-					"--s3-endpoint", "http://127.0.0.1:9001",
-					"--s3-enable-v2-signing", "true",
+					"--source", "gcs",
+					"--gcs-bucket", "unknown",
+					"--gcs-service-account-json", serviceAccountKey,
+					"--gcs-project-id", projectID,
+					"--stemcell-iaas", "google",
+					"--gcs-stemcell-path", "another/stemcell",
+					"--gcs-product-path", "some/product",
 				)
 
 				session, err := gexec.Start(command, GinkgoWriter, GinkgoWriter)
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session, "10s").Should(gexec.Exit(1))
-				Expect(session.Err).To(gbytes.Say(`could not reach provided endpoint and bucket `))
-			})
-		})
-
-		When("specifying the version of the AWS signature", func() {
-			It("supports v2 signing", func() {
-				runCommand("mc", "cp", "fixtures/product.yml", "testing/"+bucketName+"/[example-product,1.10.1]product.yml")
-				tmpDir, err := ioutil.TempDir("", "")
-				Expect(err).ToNot(HaveOccurred())
-				command := exec.Command(pathToMain, "download-product",
-					"--pivnet-file-glob", "*.yml",
-					"--pivnet-product-slug", "example-product",
-					"--product-version", "1.10.1",
-					"--output-directory", tmpDir,
-					"--source", "s3",
-					"--s3-bucket", bucketName,
-					"--s3-access-key-id", "minio",
-					"--s3-secret-access-key", "password",
-					"--s3-region-name", "unknown",
-					"--s3-endpoint", "http://127.0.0.1:9001",
-					"--s3-enable-v2-signing", "true",
-				)
-
-				session, err := gexec.Start(command, GinkgoWriter, GinkgoWriter)
-				Expect(err).NotTo(HaveOccurred())
-				Eventually(session, "10s").Should(gexec.Exit(0))
-				Expect(session.Err).To(gbytes.Say(`Writing a list of downloaded artifact to download-file.json`))
-			})
-
-			It("supports v4 signing", func() {
-				runCommand("mc", "cp", "fixtures/product.yml", "testing/"+bucketName+"/[example-product,1.10.1]product.yml")
-				tmpDir, err := ioutil.TempDir("", "")
-				Expect(err).ToNot(HaveOccurred())
-				command := exec.Command(pathToMain, "download-product",
-					"--pivnet-file-glob", "*.yml",
-					"--pivnet-product-slug", "example-product",
-					"--product-version", "1.10.1",
-					"--output-directory", tmpDir,
-					"--source", "s3",
-					"--s3-bucket", bucketName,
-					"--s3-access-key-id", "minio",
-					"--s3-secret-access-key", "password",
-					"--s3-region-name", "unknown",
-					"--s3-endpoint", "http://127.0.0.1:9001",
-				)
-
-				session, err := gexec.Start(command, GinkgoWriter, GinkgoWriter)
-				Expect(err).NotTo(HaveOccurred())
-				Eventually(session, "10s").Should(gexec.Exit(0))
-				Expect(session.Err).To(gbytes.Say(`Writing a list of downloaded artifact to download-file.json`))
+				Expect(session.Err).To(gbytes.Say(`could not reach provided bucket 'unknown'`))
 			})
 		})
 
@@ -520,12 +482,13 @@ var _ = Describe("download-product command", func() {
 					"--pivnet-product-slug", "example-product",
 					"--product-version", "1.10.1",
 					"--output-directory", tmpDir,
-					"--source", "s3",
-					"--s3-bucket", bucketName,
-					"--s3-access-key-id", "minio",
-					"--s3-secret-access-key", "password",
-					"--s3-region-name", "unknown",
-					"--s3-endpoint", "http://127.0.0.1:9001",
+					"--source", "gcs",
+					"--gcs-bucket", bucketName,
+					"--gcs-service-account-json", serviceAccountKey,
+					"--gcs-project-id", projectID,
+					"--stemcell-iaas", "google",
+					"--gcs-stemcell-path", "another/stemcell",
+					"--gcs-product-path", "some/product",
 				)
 
 				session, err := gexec.Start(command, GinkgoWriter, GinkgoWriter)
@@ -537,10 +500,10 @@ var _ = Describe("download-product command", func() {
 
 		When("a file with a prefix for the desired slug/version is not found", func() {
 			BeforeEach(func() {
-				runCommand("mc", "cp", "fixtures/product.yml", "testing/"+bucketName+"/example-product-1.10.1_product.yml")
-				runCommand("mc", "cp", "fixtures/product.yml", "testing/"+bucketName+"/still-useless.yml")
-				runCommand("mc", "cp", "fixtures/product.yml", "testing/"+bucketName+"/[example-product,2.22.3]product-456.yml")
-				runCommand("mc", "cp", "fixtures/product.yml", "testing/"+bucketName+"/[example-product,2.22.2]product-123.yml")
+				uploadGCSFile("fixtures/product.yml", serviceAccountKey, bucketName, "example-product-1.10.1_product.yml")
+				uploadGCSFile("fixtures/product.yml", serviceAccountKey, bucketName, "still-useless.yml")
+				uploadGCSFile("fixtures/product.yml", serviceAccountKey, bucketName, "[example-product,2.22.3]product-456.yml")
+				uploadGCSFile("fixtures/product.yml", serviceAccountKey, bucketName, "[example-product,2.22.2]product-123.yml")
 			})
 
 			It("raises an error that no files with a prefixed name matching the slug and version are available", func() {
@@ -551,12 +514,13 @@ var _ = Describe("download-product command", func() {
 					"--pivnet-product-slug", "example-product",
 					"--product-version", "1.10.1",
 					"--output-directory", tmpDir,
-					"--source", "s3",
-					"--s3-bucket", bucketName,
-					"--s3-access-key-id", "minio",
-					"--s3-secret-access-key", "password",
-					"--s3-region-name", "unknown",
-					"--s3-endpoint", "http://127.0.0.1:9001",
+					"--source", "gcs",
+					"--gcs-bucket", bucketName,
+					"--gcs-service-account-json", serviceAccountKey,
+					"--gcs-project-id", projectID,
+					"--stemcell-iaas", "google",
+					"--gcs-stemcell-path", "another/stemcell",
+					"--gcs-product-path", "some/product",
 				)
 
 				session, err := gexec.Start(command, GinkgoWriter, GinkgoWriter)
@@ -568,8 +532,7 @@ var _ = Describe("download-product command", func() {
 
 		When("one prefixed file matches the product slug and version", func() {
 			BeforeEach(func() {
-				runCommand("mc", "cp", "fixtures/product.yml", "testing/"+bucketName+"/some-path/[example-product,1.10.1]product.yml")
-				runCommand("mc", "ls", "testing/"+bucketName+"/some-path/")
+				uploadGCSFile("fixtures/product.yml", serviceAccountKey, bucketName, "some-path/[example-product,1.10.1]product.yml")
 			})
 
 			It("outputs the file and downloaded file metadata", func() {
@@ -580,13 +543,11 @@ var _ = Describe("download-product command", func() {
 					"--pivnet-product-slug", "example-product",
 					"--product-version", "1.10.1",
 					"--output-directory", tmpDir,
-					"--source", "s3",
-					"--s3-bucket", bucketName,
-					"--s3-access-key-id", "minio",
-					"--s3-secret-access-key", "password",
-					"--s3-region-name", "unknown",
-					"--s3-endpoint", "http://127.0.0.1:9001",
-					"--s3-product-path", "/some-path",
+					"--source", "gcs",
+					"--gcs-bucket", bucketName,
+					"--gcs-service-account-json", serviceAccountKey,
+					"--gcs-project-id", projectID,
+					"--gcs-product-path", "some-path",
 				)
 
 				session, err := gexec.Start(command, GinkgoWriter, GinkgoWriter)
@@ -606,8 +567,8 @@ var _ = Describe("download-product command", func() {
 
 		When("more than one prefixed file matches the product slug and version", func() {
 			BeforeEach(func() {
-				runCommand("mc", "cp", "fixtures/product.yml", "testing/"+bucketName+"/[example-product,1.10.1]product-456.yml")
-				runCommand("mc", "cp", "fixtures/product.yml", "testing/"+bucketName+"/[example-product,1.10.1]product-123.yml")
+				uploadGCSFile("fixtures/product.yml", serviceAccountKey, bucketName, "[example-product,1.10.1]product-456.yml")
+				uploadGCSFile("fixtures/product.yml", serviceAccountKey, bucketName, "[example-product,1.10.1]product-123.yml")
 			})
 
 			It("raises an error that too many files match the glob", func() {
@@ -618,12 +579,10 @@ var _ = Describe("download-product command", func() {
 					"--pivnet-product-slug", "example-product",
 					"--product-version", "1.10.1",
 					"--output-directory", tmpDir,
-					"--source", "s3",
-					"--s3-bucket", bucketName,
-					"--s3-access-key-id", "minio",
-					"--s3-secret-access-key", "password",
-					"--s3-region-name", "unknown",
-					"--s3-endpoint", "http://127.0.0.1:9001",
+					"--source", "gcs",
+					"--gcs-bucket", bucketName,
+					"--gcs-service-account-json", serviceAccountKey,
+					"--gcs-project-id", projectID,
 				)
 
 				session, err := gexec.Start(command, GinkgoWriter, GinkgoWriter)
@@ -635,8 +594,8 @@ var _ = Describe("download-product command", func() {
 
 		When("using product-regex to find the latest version", func() {
 			BeforeEach(func() {
-				runCommand("mc", "cp", "fixtures/product.yml", "testing/"+bucketName+"/[example-product,1.10.1]product-123.yml")
-				runCommand("mc", "cp", "fixtures/product.yml", "testing/"+bucketName+"/[example-product,1.10.2]product-456.yml")
+				uploadGCSFile("fixtures/product.yml", serviceAccountKey, bucketName, "[example-product,1.10.2]product-456.yml")
+				uploadGCSFile("fixtures/product.yml", serviceAccountKey, bucketName, "[example-product,1.10.1]product-123.yml")
 			})
 
 			It("raises an error that too many files match the glob", func() {
@@ -647,12 +606,10 @@ var _ = Describe("download-product command", func() {
 					"--pivnet-product-slug", "example-product",
 					"--product-version-regex", "1.*",
 					"--output-directory", tmpDir,
-					"--source", "s3",
-					"--s3-bucket", bucketName,
-					"--s3-access-key-id", "minio",
-					"--s3-secret-access-key", "password",
-					"--s3-region-name", "unknown",
-					"--s3-endpoint", "http://127.0.0.1:9001",
+					"--source", "gcs",
+					"--gcs-bucket", bucketName,
+					"--gcs-service-account-json", serviceAccountKey,
+					"--gcs-project-id", projectID,
 				)
 
 				session, err := gexec.Start(command, GinkgoWriter, GinkgoWriter)
@@ -817,9 +774,23 @@ func createPivotalFile(productFileName, metadataFilename string) string {
 }
 
 
-func uploadGCSFile(localFile string, serviceAccountKey string, objectName string) {
-	/*
-	https://cloud.google.com/storage/docs/uploading-objects#storage-upload-object-go
-	use the gcp go api to upload a file to a bucket, bc gsutil cannot handle []
-	 */
+func uploadGCSFile(localFile, serviceAccountKey, bucketName, objectName string) {
+	f, err := os.Open(localFile)
+	Expect(err).ToNot(HaveOccurred())
+
+	defer f.Close()
+
+	cxt := context.Background()
+	creds, err := google.CredentialsFromJSON(cxt, []byte(serviceAccountKey), storage.ScopeReadWrite)
+	Expect(err).ToNot(HaveOccurred())
+
+	client, err := storage.NewClient(cxt, option.WithCredentials(creds))
+	Expect(err).ToNot(HaveOccurred())
+
+	wc := client.Bucket(bucketName).Object(objectName).NewWriter(cxt)
+	_, err = io.Copy(wc, f)
+	Expect(err).ToNot(HaveOccurred())
+
+	err = wc.Close()
+	Expect(err).ToNot(HaveOccurred())
 }

@@ -6,7 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -261,7 +261,7 @@ func (c DownloadProduct) writeDownloadProductOutput(productFileName string, prod
 		StemcellVersion: stemcellVersion,
 	}
 
-	outputFile, err := os.Create(path.Join(c.Options.OutputDir, downloadProductFilename))
+	outputFile, err := os.Create(filepath.Join(c.Options.OutputDir, downloadProductFilename))
 	if err != nil {
 		return fmt.Errorf("could not create %s: %s", downloadProductFilename, err)
 	}
@@ -291,7 +291,7 @@ func (c DownloadProduct) writeAssignStemcellInput(productFileName string, stemce
 		Stemcell: stemcellVersion,
 	}
 
-	outputFile, err := os.Create(path.Join(c.Options.OutputDir, assignStemcellFileName))
+	outputFile, err := os.Create(filepath.Join(c.Options.OutputDir, assignStemcellFileName))
 	if err != nil {
 		return fmt.Errorf("could not create %s: %s", assignStemcellFileName, err)
 	}
@@ -313,9 +313,9 @@ func (c *DownloadProduct) downloadProductFile(slug, version, glob, prefixPath st
 
 	var productFilePath string
 	if c.Options.Source != "" || c.Options.S3Bucket == "" {
-		productFilePath = path.Join(c.Options.OutputDir, path.Base(fileArtifact.Name()))
+		productFilePath = filepath.Join(c.Options.OutputDir, filepath.Base(fileArtifact.Name()))
 	} else {
-		productFilePath = path.Join(c.Options.OutputDir, prefixPath+path.Base(fileArtifact.Name()))
+		productFilePath = filepath.Join(c.Options.OutputDir, prefixPath+filepath.Base(fileArtifact.Name()))
 	}
 
 	c.stderr.Printf("attempting to download the file %s from source %s", fileArtifact.Name(), c.downloadClient.Name())
@@ -335,8 +335,9 @@ func (c *DownloadProduct) downloadProductFile(slug, version, glob, prefixPath st
 		}
 	}
 
+	partialProductFilePath := productFilePath + ".partial"
 	// create a new file to download
-	productFile, err := os.Create(productFilePath)
+	productFile, err := os.Create(partialProductFilePath)
 	if err != nil {
 		return "", nil, fmt.Errorf("could not create file %s: %s", productFilePath, err)
 	}
@@ -348,7 +349,7 @@ func (c *DownloadProduct) downloadProductFile(slug, version, glob, prefixPath st
 	}
 
 	// check for correct sha on newly downloaded file
-	if ok, calculatedSum := c.shasumMatches(productFilePath, fileArtifact.SHA256()); !ok {
+	if ok, calculatedSum := c.shasumMatches(partialProductFilePath, fileArtifact.SHA256()); !ok {
 		e := fmt.Sprintf("the sha (%s) from %s does not match the calculated sha (%s) for the file %s",
 			fileArtifact.SHA256(),
 			c.downloadClient.Name(),
@@ -356,10 +357,11 @@ func (c *DownloadProduct) downloadProductFile(slug, version, glob, prefixPath st
 			productFilePath,
 		)
 		c.stderr.Print(e)
-		os.Remove(productFilePath)
+		_ = os.Remove(partialProductFilePath)
 		return productFilePath, fileArtifact, fmt.Errorf(e)
 	}
 
+	_ = os.Rename(partialProductFilePath, productFilePath)
 	return productFilePath, fileArtifact, nil
 }
 

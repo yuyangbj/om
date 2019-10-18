@@ -204,7 +204,7 @@ var _ = Describe("ApplyChanges", func() {
 		Context("Load config file", func() {
 			var fileName string
 
-			Context("given a valid config file", func() {
+			Context("given a valid config file with errands", func() {
 				BeforeEach(func() {
 					fh, err := ioutil.TempFile("", "")
 					defer fh.Close()
@@ -263,7 +263,7 @@ errands:
 				It("calls the api with correct arguments", func() {
 					command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
 
-					err := command.Execute([]string{"--config", fileName})
+					err := command.Execute([]string{"--config", fileName,"--product-name", "some-product"})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(service.CreateInstallationCallCount()).To(Equal(1))
@@ -306,13 +306,20 @@ errands:
 					Expect(writer.FlushArgsForCall(1)).To(Equal("these logs"))
 					Expect(writer.FlushArgsForCall(2)).To(Equal("some other logs"))
 				})
+
+				It("fails if product-name is not defined", func() {
+					command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
+					err := command.Execute([]string{"--config", fileName})
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("'--product-name' is required when applying errands using '--config'."))
+				})
 			})
 
 			Context("given a file that does not exist", func() {
 				It("returns an error", func() {
 					command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
 
-					err := command.Execute([]string{"--config", "filedoesnotexist"})
+					err := command.Execute([]string{"--config", "filedoesnotexist","--product-name", "some-product"})
 					Expect(err).To(MatchError("could not load config: open filedoesnotexist: no such file or directory"))
 				})
 			})
@@ -334,7 +341,7 @@ errands: lolololol
 				It("returns an error", func() {
 					command := commands.NewApplyChanges(service, pendingService, writer, logger, 1)
 
-					err := command.Execute([]string{"--config", fileName})
+					err := command.Execute([]string{"--config", fileName,"--product-name", "some-product"})
 					Expect(err.Error()).To(ContainSubstring("line 3: cannot unmarshal !!str `lolololol`"))
 				})
 			})

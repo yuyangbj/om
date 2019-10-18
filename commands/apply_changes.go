@@ -59,6 +59,10 @@ func (ac ApplyChanges) Execute(args []string) error {
 	errands := api.ApplyErrandChanges{}
 
 	if ac.Options.Config != "" {
+		if len(ac.Options.ProductNames) == 0 {
+			return fmt.Errorf("'--product-name' is required when applying errands using '--config'. Errands will not be applied without a corresponding '--product-name'")
+		}
+
 		fh, err := os.Open(ac.Options.Config)
 		if err != nil {
 			return fmt.Errorf("could not load config: %s", err)
